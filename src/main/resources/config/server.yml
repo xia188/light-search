@@ -1,7 +1,7 @@
 httpPort: ${httpPort:9200}
 enableHttp: true
 enableHttps: false
-serviceId: com.xlongwei.light-lucene
+serviceId: com.xlongwei.light-search
 enableRegistry: false
 ioThreads: ${ioThreads:2}
 workerThreads: ${workerThreads:3}

@@ -182,24 +182,16 @@ public class HandlerUtil {
     }
 
     /** 仅支持json，其他类型需手动响应 */
-    public static void sendResp(HttpServerExchange exchange) {
+    public static String sendResp(HttpServerExchange exchange) {
         if (exchange.isComplete()) {
-            // LayuiHandler.captcha直接输出图片字节流，不响应json
-            return;
+            return null;
         }
         Object resp = exchange.removeAttachment(HandlerUtil.RESP);
-        String response = null;
-        try {
-            if (resp != null) {
-                response = Config.getInstance().getMapper().writeValueAsString(resp);
-            }
-        } catch (Exception e) {
-            response = "{}";
-        }
+        String response = toJson(resp);
         exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, "application/json");
         exchange.setStatusCode(200);
-        log.info("res({}): {}", (System.nanoTime() - exchange.getRequestStartTime()) / 1000, response);
         exchange.getResponseSender().send(response);
+        return response;
     }
 
     @SuppressWarnings({ "unchecked" })

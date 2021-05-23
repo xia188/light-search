@@ -49,12 +49,26 @@ public class DistrictIndexer {
         String index = (String) config.get("index"), district = "district";
         FSDirectory fsDirectory = NIOFSDirectory.open(Path.of(index, district));
         IndexWriter indexWriter = new IndexWriter(fsDirectory, new IndexWriterConfig());
+        Map<String, String> codeNames = new HashMap<>();
+        int[] arr = new int[]{2, 4, 6, 9};
         AtomicInteger counter = new AtomicInteger(0);
         Consumer<Map<String, String>> add = (map) -> {
             int count = counter.incrementAndGet();
+            String code = map.get("code");
+            String name = map.get("name");
+            codeNames.put(code, name);
+            StringBuilder sb = new StringBuilder();
+            for(int i : arr) {
+                if(code.length() > i) {
+                    sb.append(codeNames.get(code.substring(0, i)));
+                }else{
+                    break;
+                }
+            }
+            sb.append(name);
             Document doc = new Document();
-            doc.add(new StringField("code", map.get("code"), Store.YES));
-            doc.add(new TextField("name", map.get("code"), Store.NO));
+            doc.add(new StringField("code", code, Store.YES));
+            doc.add(new TextField("name", sb.toString(), Store.NO));
             try {
                 indexWriter.addDocument(doc);
                 if (count % 10000 == 0) {
@@ -94,7 +108,7 @@ public class DistrictIndexer {
     @Test
     public void search() throws Exception {
         String name = "四川广安";
-        Map<String, List<String>> search = DistrictHandler.search(name);
+        Map<String, List<String>> search = DistrictHandler.search(name,4);
         log.info("search={}", search);
     }
 
@@ -141,7 +155,7 @@ public class DistrictIndexer {
         AtomicReference<ClientResponse> responseReference = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
         connection.sendRequest(clientRequest, client.createClientCallback(responseReference, latch, body));
-        latch.await(10000, TimeUnit.MILLISECONDS);
+        latch.await(30000, TimeUnit.MILLISECONDS);
         ClientResponse clientResponse = responseReference.get();
         if (clientResponse != null && clientResponse.getResponseCode() == 200) {
             return clientResponse.getAttachment(Http2Client.RESPONSE_BODY);

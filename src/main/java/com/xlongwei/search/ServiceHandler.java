@@ -17,6 +17,7 @@ public class ServiceHandler implements LightHttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
+        long start = exchange.getRequestStartTime() > 0 ? exchange.getRequestStartTime() : System.nanoTime();
         Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
         String service = queryParameters.remove("*").getFirst();
         log.info("{} {}", exchange.getRequestMethod(), exchange.getRequestURI());
@@ -32,7 +33,10 @@ public class ServiceHandler implements LightHttpHandler {
                 handler.handleRequest(exchange);
             }
         }
-        HandlerUtil.sendResp(exchange);
+        String response = HandlerUtil.sendResp(exchange);
+        if(response != null && !response.isBlank()) {
+            log.info("res({}): {}", (System.nanoTime() - start) / 1000, response);
+        }
     }
 
 }
