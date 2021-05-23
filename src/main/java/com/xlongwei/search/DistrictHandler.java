@@ -42,15 +42,15 @@ public class DistrictHandler extends SearchHandler {
     public void search(HttpServerExchange exchange) throws Exception {
         String name = HandlerUtil.getParam(exchange, "name");
         String length = HandlerUtil.getParam(exchange, "length");
-        Map<String, List<String>> search = search(name, Util.parseInteger(length));
+        Map<String, List<String>> search = searchNameAndLength(name, Util.parseInteger(length));
         HandlerUtil.setResp(exchange, search);
     }
 
-    public static Map<String, List<String>> search(String name) throws Exception {
-        return search(name, 0);
+    public static Map<String, List<String>> searchName(String name) throws Exception {
+        return searchNameAndLength(name, 0);
     }
 
-    public static Map<String, List<String>> search(String name, int length) throws Exception {
+    public static Map<String, List<String>> searchNameAndLength(String name, int length) throws Exception {
         if (StringUtils.isNotBlank(name)) {
             if (indexSearcher == null) {
                 synchronized (DistrictHandler.class) {

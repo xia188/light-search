@@ -108,7 +108,7 @@ public class DistrictIndexer {
     @Test
     public void search() throws Exception {
         String name = "四川广安";
-        Map<String, List<String>> search = DistrictHandler.search(name,4);
+        Map<String, List<String>> search = DistrictHandler.searchNameAndLength(name,4);
         log.info("search={}", search);
     }
 
