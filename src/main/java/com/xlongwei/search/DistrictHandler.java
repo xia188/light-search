@@ -1,12 +1,14 @@
 package com.xlongwei.search;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import com.networknt.config.Config;
+import com.networknt.utility.StringUtils;
 import com.networknt.utility.Util;
 
 import org.apache.lucene.document.Document;
@@ -49,13 +51,13 @@ public class DistrictHandler extends SearchHandler {
     }
 
     public static Map<String, List<String>> search(String name, int length) throws Exception {
-        if (name != null && !name.isBlank()) {
+        if (StringUtils.isNotBlank(name)) {
             if (indexSearcher == null) {
                 synchronized (DistrictHandler.class) {
                     if (indexSearcher == null) {// double check
                         Map<String, Object> config = Config.getInstance().getJsonMapConfig("lucene");
                         String index = (String) config.get("index"), district = "district";
-                        FSDirectory fsDirectory = NIOFSDirectory.open(Path.of(index, district));
+                        FSDirectory fsDirectory = NIOFSDirectory.open(Paths.get(index, district));
                         directoryReader = DirectoryReader.open(fsDirectory);
                         indexSearcher = new IndexSearcher(directoryReader);
                     }

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.networknt.handler.LightHttpHandler;
+import com.networknt.utility.StringUtils;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
@@ -55,7 +56,7 @@ public abstract class SearchHandler implements LightHttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         String path = exchange.getAttachment(PATH);
-        Method method = methods.get(path == null || path.isBlank() ? name() : path);
+        Method method = methods.get(StringUtils.isBlank(path) ? name() : path);
         if (method != null) {
             try {
                 method.invoke(this, exchange);

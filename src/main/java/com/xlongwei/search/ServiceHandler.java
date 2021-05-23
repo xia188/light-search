@@ -34,7 +34,7 @@ public class ServiceHandler implements LightHttpHandler {
             }
         }
         String response = HandlerUtil.sendResp(exchange);
-        if(response != null && !response.isBlank()) {
+        if(StringUtils.isNotBlank(response)) {
             log.info("res({}): {}", (System.nanoTime() - start) / 1000, response);
         }
     }

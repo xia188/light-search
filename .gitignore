@@ -23,8 +23,11 @@
 hs_err_pid*
 
 index
+index.tgz
 target
 .history
 .classpath
+.factorypath
+.project
 .settings
 .vscode
