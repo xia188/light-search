@@ -1,0 +1,23 @@
+enabled: true
+
+handlers:
+  - com.networknt.exception.ExceptionHandler@exception
+  - com.xlongwei.search.ServiceHandler@service
+  - com.xlongwei.search.DistrictHandler
+
+chains:
+  default:
+    - exception
+    - service
+
+paths:
+  - path: '/service/*'
+    method: 'GET'
+    exec:
+      - default
+  - path: '/service/*'
+    method: 'POST'
+    exec:
+      - default
+
+
