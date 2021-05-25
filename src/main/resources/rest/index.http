@@ -1,0 +1,43 @@
+# 使用VSCode工具和REST Client插件，使用@定义变量，使用###分隔多个请求
+@host=http://localhost:9200
+@index={{host}}/service/index
+@name=test
+
+###
+#string=StringField+Store.YES text=TextField+Store.NO
+{{index}}/open
+    ?name={{name}}
+
+{
+    "fields":[
+        {
+            "field": "code",
+            "type": "string"
+        },
+        {
+            "field": "name",
+            "type": "text"
+        }
+    ]
+}
+
+###
+POST {{index}}/docs
+    ?name={{name}}
+
+{
+    "add":[
+        {
+            "code":"511623",
+            "name":"四川省广安市邻水县"
+        }
+    ]
+}
+
+###
+{{index}}/close
+    ?name={{name}}
+
+###
+{{index}}/drop
+    ?name={{name}}

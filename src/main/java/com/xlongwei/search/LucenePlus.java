@@ -1,12 +1,17 @@
 package com.xlongwei.search;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.config.Config;
 import com.networknt.server.ShutdownHookProvider;
+import com.networknt.utility.StringUtils;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -28,8 +33,10 @@ public class LucenePlus implements ShutdownHookProvider {
 
     private static Map<String, Object> config = Config.getInstance().getJsonMapConfig("lucene");
     private static String index = (String) config.get("index");
+    private static String indices = "indices.json";
     private static Map<String, IndexWriter> writers = new HashMap<>();
     private static Map<String, IndexSearcher> searchers = new HashMap<>();
+    private static Map<String, List<LuceneField>> fields = new HashMap<>();
 
     public static IndexWriter getWriter(String name, String analyzer) throws Exception {
         IndexWriter writer = writers.get(name);
@@ -83,6 +90,44 @@ public class LucenePlus implements ShutdownHookProvider {
         close(name);
         Path path = Paths.get(index, name);
         FileUtils.deleteRecursive(path);
+        fields(name, null);
+    }
+
+    /**
+     * @param fields null 删除索引，non-null 初始化索引，多次提交时不处理
+     */
+    public static boolean fields(String name, List<LuceneField> fields) throws Exception {
+        Path path = Paths.get(index, indices);
+        String json = path.toFile().exists() ? Files.readString(path) : "";
+        json = StringUtils.isNotBlank(json) ? json : "{}";
+        LucenePlus.fields = Config.getInstance().getMapper().readValue(json,
+                new TypeReference<Map<String, List<LuceneField>>>() {
+                });
+        if (fields == null) {
+            List<LuceneField> remove = LucenePlus.fields.remove(name);
+            if (remove != null) {
+                Files.writeString(path, Config.getInstance().getMapper().writeValueAsString(LucenePlus.fields));
+                return true;
+            }
+        } else {
+            if (!LucenePlus.fields.containsKey(name)) {
+                LucenePlus.fields.put(name, fields);
+                Files.writeString(path, Config.getInstance().getMapper().writeValueAsString(LucenePlus.fields));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取索引的字段列表，需要先打开索引
+     * 
+     * @param name
+     * @return
+     */
+    public static List<LuceneField> fields(String name) {
+        List<LuceneField> list = fields.get(name);
+        return list != null ? list : Collections.emptyList();
     }
 
     @Override

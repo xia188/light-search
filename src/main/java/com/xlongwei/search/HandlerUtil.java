@@ -197,7 +197,7 @@ public class HandlerUtil {
     @SuppressWarnings({ "unchecked" })
     public static Map<String, Object> fromJson(String json) {
         try {
-            if (json != null) {
+            if (StringUtils.isNotBlank(json)) {
                 return Config.getInstance().getMapper().readValue(json, Map.class);
             }
         } catch (Exception e) {
