@@ -4,6 +4,7 @@ handlers:
   - com.networknt.exception.ExceptionHandler@exception
   - com.xlongwei.search.ServiceHandler@service
   - com.xlongwei.search.DistrictHandler
+  - com.xlongwei.search.IndexHandler
 
 chains:
   default:

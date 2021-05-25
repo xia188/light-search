@@ -28,11 +28,11 @@ public abstract class SearchHandler implements LightHttpHandler {
         String name = name();
         handlers.put(name, this);
         for (Method method : declaredMethods) {
-            if ("name".equals(method.getName())) {
-                continue;
-            }
-            if (Modifier.isPublic(method.getModifiers())) {
-                // 暂未检查returnType和parameterTypes
+            boolean isPublic = Modifier.isPublic(method.getModifiers());
+            boolean hasExchange = method.getParameterCount() == 1
+                    && method.getParameterTypes()[0] == HttpServerExchange.class;
+            boolean isVoid = method.getReturnType().equals(Void.TYPE);
+            if (isPublic && hasExchange && isVoid) {
                 methods.put(method.getName(), method);
                 log.info("{}/{} => {}", name, method.getName(), method);
             }
@@ -47,10 +47,6 @@ public abstract class SearchHandler implements LightHttpHandler {
         int handler = simpleName.indexOf("Handler");
         String name = handler > 0 ? simpleName.substring(0, handler) : simpleName;
         return name.substring(0, 1).toLowerCase() + name.substring(1);
-    }
-
-    public void close() throws Exception {
-
     }
 
     @Override
@@ -85,16 +81,5 @@ public abstract class SearchHandler implements LightHttpHandler {
 
     public static SearchHandler handler(String name) {
         return handlers.get(name);
-    }
-
-    public static void shutdown() {
-        handlers.entrySet().forEach(entry -> {
-            try {
-                entry.getValue().close();
-                log.info("{} shutdown", entry.getKey());
-            } catch (Exception e) {
-                log.warn("{} shutdown fail: {}", entry.getKey(), e.getMessage());
-            }
-        });
     }
 }

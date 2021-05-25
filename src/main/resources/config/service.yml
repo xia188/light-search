@@ -1,6 +1,6 @@
 singletons:
 - com.networknt.server.ShutdownHookProvider:
-  - com.xlongwei.search.SearchShutdown
+  - com.xlongwei.search.LucenePlus
 - com.networknt.registry.URL:
   - com.networknt.registry.URLImpl:
       protocol: light
