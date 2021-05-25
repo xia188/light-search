@@ -3,6 +3,7 @@ package com.xlongwei.search;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,10 @@ import com.networknt.utility.StringUtils;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -37,6 +42,19 @@ public class LucenePlus implements ShutdownHookProvider {
     private static Map<String, IndexWriter> writers = new HashMap<>();
     private static Map<String, IndexSearcher> searchers = new HashMap<>();
     private static Map<String, List<LuceneField>> fields = new HashMap<>();
+
+    static {
+        try {
+            Path path = Paths.get(index, indices);
+            String json = path.toFile().exists() ? Files.readString(path) : StringUtils.EMPTY;
+            json = StringUtils.isNotBlank(json) ? json : "{}";
+            fields = Config.getInstance().getMapper().readValue(json,
+                    new TypeReference<Map<String, List<LuceneField>>>() {
+                    });
+        } catch (Exception e) {
+            log.warn("fail to load indices", e);
+        }
+    }
 
     public static IndexWriter getWriter(String name, String analyzer) throws Exception {
         IndexWriter writer = writers.get(name);
@@ -73,7 +91,7 @@ public class LucenePlus implements ShutdownHookProvider {
         return new StandardAnalyzer();
     }
 
-    public static void close(String name) throws Exception {
+    public static boolean close(String name) throws Exception {
         IndexWriter writer = writers.get(name);
         if (writer != null) {
             writer.close();
@@ -84,13 +102,54 @@ public class LucenePlus implements ShutdownHookProvider {
                 searcher.getIndexReader().close();
             }
         }
+        return writer != null;
     }
 
-    public static void drop(String name) throws Exception {
+    public static boolean drop(String name) throws Exception {
         close(name);
         Path path = Paths.get(index, name);
         FileUtils.deleteRecursive(path);
-        fields(name, null);
+        return fields(name, null);
+    }
+
+    /** {add:[{name:value}]} */
+    @SuppressWarnings({ "rawtypes" })
+    public static boolean docs(String name, Map<String, Object> map) throws Exception {
+        if (map == null || map.isEmpty()) {
+            return false;
+        }
+        List<LuceneField> fields = fields(name);
+        if (fields == null || fields.isEmpty()) {
+            return false;
+        }
+        List<?> list = (List) map.get("add");
+        if (list != null && list.size() > 0) {
+            List<Document> docs = new ArrayList<>(list.size());
+            for (Object obj : list) {
+                Map row = (Map) obj;
+                Document doc = new Document();
+                for (LuceneField field : fields) {
+                    switch (field.getType()) {
+                        case "string":
+                            doc.add(new StringField(field.getName(), (String) row.get(field.getName()),
+                                    field.isStore() ? Store.YES : Store.NO));
+                            break;
+                        case "text":
+                            doc.add(new TextField(field.getName(), (String) row.get(field.getName()),
+                                    field.isStore() ? Store.YES : Store.NO));
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                docs.add(doc);
+            }
+            // open时需要指定analyzer，目前仅支持StandardAnalyzer
+            IndexWriter writer = getWriter(name, null);
+            writer.addDocuments(docs);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -98,11 +157,6 @@ public class LucenePlus implements ShutdownHookProvider {
      */
     public static boolean fields(String name, List<LuceneField> fields) throws Exception {
         Path path = Paths.get(index, indices);
-        String json = path.toFile().exists() ? Files.readString(path) : "";
-        json = StringUtils.isNotBlank(json) ? json : "{}";
-        LucenePlus.fields = Config.getInstance().getMapper().readValue(json,
-                new TypeReference<Map<String, List<LuceneField>>>() {
-                });
         if (fields == null) {
             List<LuceneField> remove = LucenePlus.fields.remove(name);
             if (remove != null) {

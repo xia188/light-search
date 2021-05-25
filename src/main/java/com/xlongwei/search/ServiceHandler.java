@@ -27,7 +27,7 @@ public class ServiceHandler implements LightHttpHandler {
             String name = split[0];
             SearchHandler handler = SearchHandler.handler(name);
             if (handler != null) {
-                String path = split.length > 1 ? split[1] : "";
+                String path = split.length > 1 ? split[1] : StringUtils.EMPTY;
                 SearchHandler.path(exchange, path);
                 HandlerUtil.parseBody(exchange);
                 handler.handleRequest(exchange);

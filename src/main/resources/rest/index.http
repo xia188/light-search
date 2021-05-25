@@ -39,5 +39,12 @@ POST {{index}}/docs
     ?name={{name}}
 
 ###
+#正常流程：open打开索引，docs推送文档，close关闭索引，search搜索
+POST {{index}}/search
+    ?name={{name}}
+
+query=name:四川邻水
+
+###
 {{index}}/drop
     ?name={{name}}
