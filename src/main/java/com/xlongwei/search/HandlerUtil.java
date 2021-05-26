@@ -118,7 +118,7 @@ public class HandlerUtil {
             log.info("fail to parse body: {}", e.getMessage());
         }
         if (!body.isEmpty()) {
-            log.info("body: {}", body);
+            log.debug("body: {}", body);
             exchange.putAttachment(BODY, body);
         }
     }
@@ -180,6 +180,7 @@ public class HandlerUtil {
         return null;
     }
 
+    /** 获取日期参数 */
     public static Date parseDate(String string, Date defDate) {
         if (StringUtils.isNotBlank(string)) {
             int length = string.length();
@@ -195,6 +196,18 @@ public class HandlerUtil {
             }
         }
         return defDate;
+    }
+
+    /** 获取整数参数 */
+    public static long parseLong(String string, long defLong) {
+        if (StringUtils.isNotBlank(string)) {
+            try {
+                return Long.parseLong(string);
+            } catch (Exception e) {
+
+            }
+        }
+        return defLong;
     }
 
     /** 仅支持map，其他类型需手动响应 */

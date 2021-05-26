@@ -4,7 +4,7 @@
 @name=district
 
 ###
-#与DistrictIndexer不同，code使用StoreField仅存储而不建索引
+#code也是查询条件，因此需要建索引，而不需要建索引的字段再用store类型就够了
 {{index}}/open
     ?name={{name}}
 
@@ -12,7 +12,7 @@
     "fields":[
         {
             "field": "code",
-            "type": "store"
+            "type": "string"
         },
         {
             "field": "name",
@@ -43,8 +43,14 @@ POST {{index}}/docs
 #正常流程：open打开索引，docs推送文档，close关闭索引，search搜索
 POST {{index}}/search
     ?name={{name}}
+    &n=3
 
 query=name:四川邻水
+
+###
+POST {{host}}/service/district/search
+    ?name=四川邻水
+    &length=6
 
 ###
 {{index}}/drop

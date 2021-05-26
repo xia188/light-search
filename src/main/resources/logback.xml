@@ -51,7 +51,7 @@
 	    </else>
     </if>
 
-    <logger name="com.xlongwei" level="debug"/>
+    <logger name="com.xlongwei" level="info"/>
 
 	<root level="${logLevel}">
 		<if condition='isDefined("logserver")'>

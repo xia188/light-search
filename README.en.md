@@ -1,36 +1,38 @@
 # light-search
 
 #### Description
-{**When you're done, you can delete the content in this README and update the file with details for others getting started with your repository**}
+this is a search service base on light-4j and lucene.
 
 #### Software Architecture
 Software architecture description
 
 #### Installation
 
-1.  xxxx
-2.  xxxx
+1.  sh start.sh jar
+2.  sh start.sh jars
+3.  sh start.sh start
+
+#### district index
+
+1.  data rows: 677391
+2.  data size: 26M, index: code:string,name:text
 3.  xxxx
 
-#### Instructions
+#### index
+1.  IndexHandler: /service/index/*
+2.  LucenePlus: open docs close search drop
+3.  LuceneField: POSt /service/index/open {name,fields:[{field,type,store,sort}]}}
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+```
+#field,type:required，sort,store:optional
+type:string,text,store,int,long,float,double,date,binary
+sort:sorted,sortedset,numeric,sortednumeric
+store:yes,no
 
-#### Contribution
+string:Store.YES Indexed
+text:Analyzed Indexed, Store.NO
+store:Store.YES
+int,long,float,double,date:Numric values, Store.NO
+binary:byte[] org.apache.commons.codec.binary.Base64#decodeBase64 encodeBase64
+```
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
-
-
-#### Gitee Feature
-
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)

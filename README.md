@@ -18,6 +18,7 @@
 1.  数据条数：677391
 2.  索引大小：26M（压缩后9.8M），索引参数：code:string,name:text
 3.  索引优化：20M（8.3M），索引参数：code:store,name:text
+4.  行政区划查询支持限定类型：省市区乡村，RegexpQuery(code,".{6}")，因此code也属于查询条件，还得用string类型
 
 #### 索引规则
 

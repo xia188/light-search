@@ -90,7 +90,8 @@ public class IndexHandler extends SearchHandler {
             split[1].chars().mapToObj(c -> new BytesRef(String.valueOf((char) c)))
                     .forEach(word -> builder.add(new TermQuery(new Term(split[0], word)), Occur.SHOULD));
             IndexSearcher indexSearcher = LucenePlus.getSearcher(name);
-            TopDocs search = indexSearcher.search(builder.build(), 10);
+            TopDocs search = indexSearcher.search(builder.build(),
+                    (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "n"), 10L));
             List<Map<String, Object>> list = new ArrayList<>();
             if (search.scoreDocs != null && search.scoreDocs.length > 0) {
                 List<LuceneField> fields = LucenePlus.fields(name);

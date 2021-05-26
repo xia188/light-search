@@ -13,7 +13,7 @@
     <version.logback>1.2.3</version.logback>
     <version.lombok>1.18.8</version.lombok>
     <version.janino>2.6.1</version.janino>
-    <version.lucene>8.2.0</version.lucene>
+    <version.lucene>8.8.2</version.lucene>
   </properties>
   <dependencies>
     <dependency>
