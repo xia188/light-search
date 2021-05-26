@@ -1,0 +1,51 @@
+# 使用VSCode工具和REST Client插件，使用@定义变量，使用###分隔多个请求
+@host=http://localhost:9200
+@index={{host}}/service/index
+@name=district
+
+###
+#与DistrictIndexer不同，code使用StoreField仅存储而不建索引
+{{index}}/open
+    ?name={{name}}
+
+{
+    "fields":[
+        {
+            "field": "code",
+            "type": "store"
+        },
+        {
+            "field": "name",
+            "type": "text"
+        }
+    ]
+}
+
+###
+#这次尝试从light4j推数据，这里没有body时会得到{"doc":false}
+POST {{index}}/docs
+    ?name={{name}}
+
+# {
+#     "add":[
+#         {
+#             "code":"511623",
+#             "name":"四川省广安市邻水县"
+#         }
+#     ]
+# }
+
+###
+{{index}}/close
+    ?name={{name}}
+
+###
+#正常流程：open打开索引，docs推送文档，close关闭索引，search搜索
+POST {{index}}/search
+    ?name={{name}}
+
+query=name:四川邻水
+
+###
+{{index}}/drop
+    ?name={{name}}

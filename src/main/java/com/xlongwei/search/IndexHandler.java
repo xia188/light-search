@@ -47,7 +47,7 @@ public class IndexHandler extends SearchHandler {
                     String store = Objects.toString(map.get("store"), StringUtils.EMPTY);
                     // string默认存储，适合主键，其他类型默认不存储，或手动指定store:yes
                     field.setStore(StringUtils.isNotBlank(store) ? "yes".equalsIgnoreCase(store)
-                            : "string".equals(field.getType()));
+                            : "string,store".contains(field.getType()));
                     fields.add(field);
                 } else {
                     // 索引定义好之后不能变更，因此校验不通过时拒绝创建索引，从而有机会调整请求参数
