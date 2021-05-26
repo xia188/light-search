@@ -3,8 +3,10 @@ package com.xlongwei.search;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,7 +53,7 @@ public class LucenePlus implements ShutdownHookProvider {
         Path path = Paths.get(index, indices);
         File file = path.toFile();
         try (BufferedReader reader = file.exists()
-                ? new BufferedReader(new FileReader(path.toFile(), StandardCharsets.UTF_8))
+                ? new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))
                 : null) {
             String json = file.exists() ? reader.readLine() : StringUtils.EMPTY;
             json = StringUtils.isNotBlank(json) ? json : "{}";
@@ -161,7 +163,8 @@ public class LucenePlus implements ShutdownHookProvider {
         if (fields == null) {
             List<LuceneField> remove = LucenePlus.fields.remove(name);
             if (remove != null) {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(path.toFile(), StandardCharsets.UTF_8));
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(new FileOutputStream(path.toFile()), StandardCharsets.UTF_8));
                 writer.write(Config.getInstance().getMapper().writeValueAsString(LucenePlus.fields));
                 writer.close();
                 return true;
@@ -169,7 +172,8 @@ public class LucenePlus implements ShutdownHookProvider {
         } else {
             if (!LucenePlus.fields.containsKey(name)) {
                 LucenePlus.fields.put(name, fields);
-                BufferedWriter writer = new BufferedWriter(new FileWriter(path.toFile(), StandardCharsets.UTF_8));
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(new FileOutputStream(path.toFile()), StandardCharsets.UTF_8));
                 writer.write(Config.getInstance().getMapper().writeValueAsString(LucenePlus.fields));
                 writer.close();
                 return true;
