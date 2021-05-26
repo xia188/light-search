@@ -3,6 +3,7 @@ package com.xlongwei.search;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -67,6 +68,7 @@ public abstract class SearchHandler implements LightHttpHandler {
                     }
                 }
                 log.warn("service handle failed, path: {}, ex: {}", path, msg);
+                HandlerUtil.setResp(exchange, Collections.singletonMap("error", msg));
             }
         }
     }

@@ -57,13 +57,12 @@ public class IndexHandler extends SearchHandler {
             }
         }
         LucenePlus.getWriter(name, HandlerUtil.getParam(exchange, "analyzer"));
-        // fields不是null，会触发读取indices.json索引字段定义
         LucenePlus.fields(name, fields);
         fields = LucenePlus.fields(name);
         HandlerUtil.setResp(exchange, Collections.singletonMap("fields", fields));
     }
 
-    /** {name,add:[{name:value}]} */
+    /** {name,commit,add:[{name:value}]} */
     public void docs(HttpServerExchange exchange) throws Exception {
         String name = HandlerUtil.getParam(exchange, "name");
         if (StringUtils.isBlank(name)) {
@@ -71,6 +70,9 @@ public class IndexHandler extends SearchHandler {
         } else {
             Map<String, Object> map = HandlerUtil.fromJson(HandlerUtil.getBodyString(exchange));
             boolean docs = LucenePlus.docs(name, map);
+            if (docs && "true".equalsIgnoreCase(HandlerUtil.getParam(exchange, "commit"))) {
+                LucenePlus.getWriter(name, null).commit();
+            }
             HandlerUtil.setResp(exchange, Collections.singletonMap("docs", docs));
         }
     }
@@ -78,11 +80,11 @@ public class IndexHandler extends SearchHandler {
     /** {name,query} */
     public void search(HttpServerExchange exchange) throws Exception {
         String name = HandlerUtil.getParam(exchange, "name");
-        // 实现简单的QueryParser功能 name:四川邻水
         String query = HandlerUtil.getParam(exchange, "query");
         if (StringUtils.isBlank(name) || StringUtils.isBlank(query) || !query.contains(":")) {
             HandlerUtil.setResp(exchange, Collections.singletonMap("search", Collections.emptyList()));
         } else {
+            // 实现简单的QueryParser功能 name:四川邻水
             String[] split = query.split("[:]");
             Builder builder = new BooleanQuery.Builder();
             split[1].chars().mapToObj(c -> new BytesRef(String.valueOf((char) c)))

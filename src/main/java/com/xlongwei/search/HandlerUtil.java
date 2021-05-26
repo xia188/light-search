@@ -1,9 +1,11 @@
 package com.xlongwei.search;
 
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,8 @@ public class HandlerUtil {
     private static final AttachmentKey<Map<String, Object>> BODY = AttachmentKey.create(Map.class);
     private static final String BODYSTRING = "BODYSTRING";
     private static final AttachmentKey<Object> RESP = AttachmentKey.create(Object.class);
+    private static String[] patterns = new String[] { "yyyy-MM-dd HH:mm:ss", "yyyyMMddHHmmss", "yyyy-MM-dd", "yyyyMMdd",
+            "yyyy/MM/dd", "yyyy.MM.dd", "yyyy-MM-ddTHH:mm:ss" };
 
     /**
      * 解析body为Map<String, Object> <br>
@@ -174,6 +178,23 @@ public class HandlerUtil {
             }
         }
         return null;
+    }
+
+    public static Date parseDate(String string, Date defDate) {
+        if (StringUtils.isNotBlank(string)) {
+            int length = string.length();
+            // yyyyMd=6 yyyy-MM-dd HH:mm:ss=19
+            if (6 <= length && length <= 19) {
+                for (String pattern : patterns) {
+                    try {
+                        return new SimpleDateFormat(pattern).parse(string);
+                    } catch (Exception e) {
+
+                    }
+                }
+            }
+        }
+        return defDate;
     }
 
     /** 仅支持map，其他类型需手动响应 */

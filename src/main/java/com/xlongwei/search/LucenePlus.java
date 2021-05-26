@@ -17,9 +17,7 @@ import com.networknt.utility.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -34,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see https://gitee.com/Myzhang/luceneplus
  */
 @Slf4j
+@SuppressWarnings({ "rawtypes" })
 public class LucenePlus implements ShutdownHookProvider {
 
     private static Map<String, Object> config = Config.getInstance().getJsonMapConfig("lucene");
@@ -113,7 +112,6 @@ public class LucenePlus implements ShutdownHookProvider {
     }
 
     /** {add:[{name:value}]} */
-    @SuppressWarnings({ "rawtypes" })
     public static boolean docs(String name, Map<String, Object> map) throws Exception {
         if (map == null || map.isEmpty()) {
             return false;
@@ -122,31 +120,26 @@ public class LucenePlus implements ShutdownHookProvider {
         if (fields == null || fields.isEmpty()) {
             return false;
         }
+        IndexWriter writer = writers.get(name);
+        if (writer == null) {
+            return false;
+        }
         List<?> list = (List) map.get("add");
         if (list != null && list.size() > 0) {
             List<Document> docs = new ArrayList<>(list.size());
             for (Object obj : list) {
                 Map row = (Map) obj;
-                Document doc = new Document();
-                for (LuceneField field : fields) {
-                    switch (field.getType()) {
-                        case "string":
-                            doc.add(new StringField(field.getName(), (String) row.get(field.getName()),
-                                    field.isStore() ? Store.YES : Store.NO));
-                            break;
-                        case "text":
-                            doc.add(new TextField(field.getName(), (String) row.get(field.getName()),
-                                    field.isStore() ? Store.YES : Store.NO));
-                            break;
-                        default:
-                            break;
-                    }
+                List<Field> docFields = LuceneField.docFields(row, fields);
+                if (docFields.size() > 0) {
+                    Document doc = new Document();
+                    docFields.forEach(doc::add);
+                    docs.add(doc);
+                } else {
+                    return false;
                 }
-                docs.add(doc);
             }
-            // open时需要指定analyzer，目前仅支持StandardAnalyzer
-            IndexWriter writer = getWriter(name, null);
             writer.addDocuments(docs);
+            writer.flush();
             return true;
         }
         return false;
