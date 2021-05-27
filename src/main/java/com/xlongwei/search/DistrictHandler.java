@@ -6,14 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.networknt.utility.StringUtils;
-import com.networknt.utility.Util;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.BooleanQuery.Builder;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
@@ -32,22 +31,22 @@ public class DistrictHandler extends SearchHandler {
 
     public void search(HttpServerExchange exchange) throws Exception {
         String name = HandlerUtil.getParam(exchange, "name");
-        String length = HandlerUtil.getParam(exchange, "length");
-        Map<String, List<String>> search = searchNameAndLength(name, Util.parseInteger(length));
+        String ancestor = HandlerUtil.getParam(exchange, "ancestor");
+        int length = (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "length"), 0L);
+        Map<String, List<String>> search = search(name, ancestor, length);
         HandlerUtil.setResp(exchange, search);
     }
 
-    public static Map<String, List<String>> searchName(String name) throws Exception {
-        return searchNameAndLength(name, 0);
-    }
-
-    public static Map<String, List<String>> searchNameAndLength(String name, int length) throws Exception {
+    public static Map<String, List<String>> search(String name, String ancestor, int length) throws Exception {
         if (StringUtils.isNotBlank(name)) {
             Builder builder = new BooleanQuery.Builder();
             name.chars().mapToObj(c -> new BytesRef(String.valueOf((char) c)))
                     .forEach(word -> builder.add(new TermQuery(new Term("name", word)), Occur.SHOULD));
             if (length == 2 || length == 4 || length == 6 || length == 9 || length == 12) {
                 builder.add(new RegexpQuery(new Term("code", ".{" + length + "}")), Occur.MUST);
+            }
+            if (StringUtils.isNotBlank(ancestor)) {
+                builder.add(new RegexpQuery(new Term("code", ancestor + ".*")), Occur.MUST);
             }
             Query query = builder.build();
             IndexSearcher indexSearcher = LucenePlus.getSearcher("district");
