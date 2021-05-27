@@ -16,9 +16,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.util.BytesRef;
 
 import io.undertow.server.HttpServerExchange;
 import lombok.extern.slf4j.Slf4j;
@@ -33,15 +31,15 @@ public class DistrictHandler extends SearchHandler {
         String name = HandlerUtil.getParam(exchange, "name");
         String ancestor = HandlerUtil.getParam(exchange, "ancestor");
         int length = (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "length"), 0L);
-        Map<String, List<String>> search = search(name, ancestor, length);
+        int n = (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "n"), 10L);
+        Map<String, List<String>> search = search(name, ancestor, length, n > 0 ? n : 10);
         HandlerUtil.setResp(exchange, search);
     }
 
-    public static Map<String, List<String>> search(String name, String ancestor, int length) throws Exception {
+    public static Map<String, List<String>> search(String name, String ancestor, int length, int n) throws Exception {
         if (StringUtils.isNotBlank(name)) {
             Builder builder = new BooleanQuery.Builder();
-            name.chars().mapToObj(c -> new BytesRef(String.valueOf((char) c)))
-                    .forEach(word -> builder.add(new TermQuery(new Term("name", word)), Occur.SHOULD));
+            builder.add(new RegexpQuery(new Term("name", "[" + name + "]+")), Occur.MUST);
             if (length == 2 || length == 4 || length == 6 || length == 9 || length == 12) {
                 builder.add(new RegexpQuery(new Term("code", ".{" + length + "}")), Occur.MUST);
             }
@@ -50,7 +48,7 @@ public class DistrictHandler extends SearchHandler {
             }
             Query query = builder.build();
             IndexSearcher indexSearcher = LucenePlus.getSearcher("district");
-            TopDocs search = indexSearcher.search(query, 10);
+            TopDocs search = indexSearcher.search(query, n);
             if (search.scoreDocs != null && search.scoreDocs.length > 0) {
                 List<String> codes = new ArrayList<>(search.scoreDocs.length);
                 for (ScoreDoc scoreDoc : search.scoreDocs) {

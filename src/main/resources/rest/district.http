@@ -52,6 +52,7 @@ POST {{host}}/service/district/search
     ?name=四川邻水
     &length=6
     &ancestor=5116
+    &n=1
 
 ###
 {{index}}/drop
