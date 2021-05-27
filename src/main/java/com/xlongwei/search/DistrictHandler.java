@@ -16,7 +16,9 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.util.BytesRef;
 
 import io.undertow.server.HttpServerExchange;
 import lombok.extern.slf4j.Slf4j;
@@ -39,10 +41,15 @@ public class DistrictHandler extends SearchHandler {
     public static Map<String, List<String>> search(String name, String ancestor, int length, int n) throws Exception {
         if (StringUtils.isNotBlank(name)) {
             Builder builder = new BooleanQuery.Builder();
+            // 至少包含一个字，否则不相关的结果也会出来
             builder.add(new RegexpQuery(new Term("name", "[" + name + "]+")), Occur.MUST);
+            // 包含的字越多越靠前，否则结果排序不准确
+            name.chars().mapToObj(c -> new BytesRef(String.valueOf((char) c)))
+                    .forEach(word -> builder.add(new TermQuery(new Term("name", word)), Occur.SHOULD));
             if (length == 2 || length == 4 || length == 6 || length == 9 || length == 12) {
                 builder.add(new RegexpQuery(new Term("code", ".{" + length + "}")), Occur.MUST);
             }
+            // code也支持查询条件，因此不能使用store类型
             if (StringUtils.isNotBlank(ancestor)) {
                 builder.add(new RegexpQuery(new Term("code", ancestor + ".*")), Occur.MUST);
             }
