@@ -210,6 +210,18 @@ public class HandlerUtil {
         return defLong;
     }
 
+    /** 获取浮点参数 */
+    public static double parseDouble(String string, double defDouble) {
+        if (StringUtils.isNotBlank(string)) {
+            try {
+                return Double.parseDouble(string);
+            } catch (Exception e) {
+
+            }
+        }
+        return defDouble;
+    }
+
     /** 仅支持map，其他类型需手动响应 */
     public static void setResp(HttpServerExchange exchange, Map<String, ?> map) {
         exchange.putAttachment(HandlerUtil.RESP, map);

@@ -5,6 +5,7 @@ handlers:
   - com.xlongwei.search.ServiceHandler@service
   - com.xlongwei.search.DistrictHandler
   - com.xlongwei.search.IndexHandler
+  - com.xlongwei.search.LogserverHandler
 
 chains:
   default:

@@ -1,0 +1,62 @@
+# 使用VSCode工具和REST Client插件，使用@定义变量，使用###分隔多个请求
+@host=http://localhost:9200
+@index={{host}}/service/index
+@name=logserver
+
+###
+#根据line日志搜索number行号，根据day日期清理索引
+{{index}}/open
+    ?name={{name}}
+
+{
+    "fields":[
+        {
+            "field": "day",
+            "type": "string"
+        },
+        {
+            "field": "number",
+            "type": "store"
+        },
+        {
+            "field": "line",
+            "type": "text"
+        }
+    ]
+}
+
+###
+POST {{index}}/docs
+    ?name={{name}}
+
+{
+    "add":[
+        {
+            "day":"2021-05-27",
+            "number":"1",
+            "line":"light4j 10:27:26.491 INFO  [XNIO-1 task-2] HandlerUtil:140 body: {bankCardNumber=6215340301505474410}"
+        },
+        {
+            "day":"2021-05-28",
+            "number":"2",
+            "line":"light4j 10:27:26.491 INFO  [XNIO-1 task-2] HandlerUtil:249 res(933): {\"error\":\"access is limited\"}"
+        }
+    ]
+}
+
+###
+{{index}}/close
+    ?name={{name}}
+
+###
+POST {{host}}/service/logserver/lines
+    ?search=INFO
+    # &logs=all.logs
+
+###
+POST {{host}}/service/logserver/delete
+    ?day=2021-05-28
+
+###
+{{index}}/drop
+    ?name={{name}}

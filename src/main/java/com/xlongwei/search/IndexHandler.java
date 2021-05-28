@@ -70,9 +70,6 @@ public class IndexHandler extends SearchHandler {
         } else {
             Map<String, Object> map = HandlerUtil.fromJson(HandlerUtil.getBodyString(exchange));
             boolean docs = LucenePlus.docs(name, map);
-            if (docs && "true".equalsIgnoreCase(HandlerUtil.getParam(exchange, "commit"))) {
-                LucenePlus.getWriter(name, null).commit();
-            }
             HandlerUtil.setResp(exchange, Collections.singletonMap("docs", docs));
         }
     }
@@ -99,7 +96,7 @@ public class IndexHandler extends SearchHandler {
                     Document doc = indexSearcher.doc(scoreDoc.doc);
                     Map<String, Object> item = new HashMap<>();
                     for (LuceneField field : fields) {
-                        item.put(field.getName(), doc.get(field.getName()));
+                        item.put(field.getName(), field.resolve(doc));
                     }
                     list.add(item);
                 }

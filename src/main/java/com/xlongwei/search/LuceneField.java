@@ -10,6 +10,7 @@ import com.networknt.utility.StringUtils;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.lucene.document.BinaryPoint;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -51,6 +52,36 @@ public class LuceneField {
     public boolean checkValid() {
         return StringUtils.isNotBlank(name) && StringUtils.isNotBlank(type) && Arrays.binarySearch(types, type) >= 0
                 && (StringUtils.isBlank(sort) || Arrays.binarySearch(sorts, sort) >= 0);
+    }
+
+    public Object resolve(Document doc) {
+        String[] values = null;
+        switch (type) {
+            case "string":
+            case "text":
+            case "store":
+            case "date":// store时原样存储
+                values = doc.getValues(name);
+                return values.length > 1 ? values
+                        : (values.length == 1 ? StringUtils.trimToEmpty(values[0]) : StringUtils.EMPTY);
+            case "int":
+            case "long":
+                values = doc.getValues(name);
+                return values.length > 1 ? Arrays.stream(values).mapToLong(Long::parseLong).toArray()
+                        : (values.length == 1 ? HandlerUtil.parseLong(values[0], 0L) : StringUtils.EMPTY);
+            case "float":
+            case "double":
+                values = doc.getValues(name);
+                return values.length > 1 ? Arrays.stream(values).mapToDouble(Double::parseDouble).toArray()
+                        : (values.length == 1 ? HandlerUtil.parseDouble(values[0], 0.0) : StringUtils.EMPTY);
+            case "binary":
+                BytesRef[] binaryValues = doc.getBinaryValues(name);
+                return binaryValues.length > 1
+                        ? Arrays.stream(binaryValues).map(bv -> Base64.encodeBase64String(bv.bytes)).toArray()
+                        : (binaryValues.length == 1 ? Base64.encodeBase64String(binaryValues[0].bytes)
+                                : StringUtils.EMPTY);
+        }
+        return StringUtils.EMPTY;
     }
 
     public static List<Field> docFields(Map row, List<LuceneField> fields) {
@@ -283,7 +314,7 @@ public class LuceneField {
             if ("binary".equals(field.getType())) {
                 list.add(new StoredField(field.getName(), Base64.decodeBase64(string)));
             } else {
-                list.add(new StoredField(field.getName(), new BytesRef(string)));
+                list.add(new StoredField(field.getName(), string));
             }
         }
     }

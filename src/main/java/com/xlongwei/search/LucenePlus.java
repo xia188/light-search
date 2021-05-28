@@ -106,12 +106,18 @@ public class LucenePlus implements ShutdownHookProvider {
             writer.close();
             writers.remove(name);
             // 关闭索引之后重新获取searcher
-            IndexSearcher searcher = searchers.remove(name);
-            if (searcher != null) {
-                searcher.getIndexReader().close();
-            }
+            closeSearcher(name);
         }
         return writer != null;
+    }
+
+    public static boolean closeSearcher(String name) throws Exception {
+        IndexSearcher searcher = searchers.remove(name);
+        if (searcher != null) {
+            searcher.getIndexReader().close();
+            return true;
+        }
+        return false;
     }
 
     public static boolean drop(String name) throws Exception {
@@ -130,10 +136,6 @@ public class LucenePlus implements ShutdownHookProvider {
         if (fields == null || fields.isEmpty()) {
             return false;
         }
-        IndexWriter writer = writers.get(name);
-        if (writer == null) {
-            return false;
-        }
         List<?> list = (List) map.get("add");
         if (list != null && list.size() > 0) {
             List<Document> docs = new ArrayList<>(list.size());
@@ -148,8 +150,11 @@ public class LucenePlus implements ShutdownHookProvider {
                     return false;
                 }
             }
+            IndexWriter writer = getWriter(name, null);
             writer.addDocuments(docs);
             writer.flush();
+            writer.commit();
+            closeSearcher(name);
             return true;
         }
         return false;
