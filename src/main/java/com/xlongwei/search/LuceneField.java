@@ -126,114 +126,126 @@ public class LuceneField {
 
     private static void binaryFields(List<Field> list, String stringValue, List listValues, LuceneField field) {
         if (listValues != null) {
-            byte[][] arr = new byte[listValues.size()][];
-            for (int i = 0; i < arr.length; i++) {
-                String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
-                arr[i] = Base64.decodeBase64(string);
-                storeField(list, string, field);
-            }
             if (listValues.size() > 0) {
+                byte[][] arr = new byte[listValues.size()][];
+                for (int i = 0; i < arr.length; i++) {
+                    String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
+                    arr[i] = Base64.decodeBase64(string);
+                    storeField(list, string, field);
+                }
                 list.add(new BinaryPoint(field.getName(), arr));
             }
         } else {
-            list.add(new BinaryPoint(field.getName(), Base64.decodeBase64(stringValue)));
-            storeField(list, stringValue, field);
+            if (StringUtils.isNotBlank(stringValue)) {
+                list.add(new BinaryPoint(field.getName(), Base64.decodeBase64(stringValue)));
+                storeField(list, stringValue, field);
+            }
         }
     }
 
     private static void doubleFields(List<Field> list, String stringValue, List listValues, LuceneField field) {
         if (listValues != null) {
-            double[] arr = new double[listValues.size()];
-            for (int i = 0; i < arr.length; i++) {
-                String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
-                arr[i] = Double.parseDouble(string);
-                sortField(list, string, field);
-                storeField(list, string, field);
-            }
             if (listValues.size() > 0) {
+                double[] arr = new double[listValues.size()];
+                for (int i = 0; i < arr.length; i++) {
+                    String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
+                    arr[i] = Double.parseDouble(string);
+                    sortField(list, string, field);
+                    storeField(list, string, field);
+                }
                 list.add(new DoublePoint(field.getName(), arr));
             }
         } else {
-            list.add(new DoublePoint(field.getName(), Double.parseDouble(stringValue)));
-            sortField(list, stringValue, field);
-            storeField(list, stringValue, field);
+            if (StringUtils.isNotBlank(stringValue)) {
+                list.add(new DoublePoint(field.getName(), Double.parseDouble(stringValue)));
+                sortField(list, stringValue, field);
+                storeField(list, stringValue, field);
+            }
         }
     }
 
     private static void floatFields(List<Field> list, String stringValue, List listValues, LuceneField field) {
         if (listValues != null) {
-            float[] arr = new float[listValues.size()];
-            for (int i = 0; i < arr.length; i++) {
-                String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
-                arr[i] = Float.parseFloat(string);
-                sortField(list, string, field);
-                storeField(list, string, field);
-            }
             if (listValues.size() > 0) {
+                float[] arr = new float[listValues.size()];
+                for (int i = 0; i < arr.length; i++) {
+                    String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
+                    arr[i] = Float.parseFloat(string);
+                    sortField(list, string, field);
+                    storeField(list, string, field);
+                }
                 list.add(new FloatPoint(field.getName(), arr));
             }
         } else {
-            list.add(new FloatPoint(field.getName(), Float.parseFloat(stringValue)));
-            sortField(list, stringValue, field);
-            storeField(list, stringValue, field);
+            if (StringUtils.isNotBlank(stringValue)) {
+                list.add(new FloatPoint(field.getName(), Float.parseFloat(stringValue)));
+                sortField(list, stringValue, field);
+                storeField(list, stringValue, field);
+            }
         }
     }
 
     private static void dateFields(List<Field> list, String stringValue, List listValues, LuceneField field) {
         if (listValues != null) {
-            long[] arr = new long[listValues.size()];
-            for (int i = 0; i < arr.length; i++) {
-                String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
-                arr[i] = HandlerUtil.parseDate(string, null).getTime();
-                sortField(list, String.valueOf(arr[i]), field);
-                storeField(list, string, field);
-            }
             if (listValues.size() > 0) {
+                long[] arr = new long[listValues.size()];
+                for (int i = 0; i < arr.length; i++) {
+                    String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
+                    arr[i] = HandlerUtil.parseDate(string, null).getTime();
+                    sortField(list, String.valueOf(arr[i]), field);
+                    storeField(list, string, field);
+                }
                 list.add(new LongPoint(field.getName(), arr));
             }
         } else {
-            long longValue = HandlerUtil.parseDate(stringValue, null).getTime();
-            list.add(new LongPoint(field.getName(), longValue));
-            sortField(list, String.valueOf(longValue), field);
-            storeField(list, stringValue, field);
+            if (StringUtils.isNotBlank(stringValue)) {
+                long longValue = HandlerUtil.parseDate(stringValue, null).getTime();
+                list.add(new LongPoint(field.getName(), longValue));
+                sortField(list, String.valueOf(longValue), field);
+                storeField(list, stringValue, field);
+            }
         }
     }
 
     private static void longFields(List<Field> list, String stringValue, List listValues, LuceneField field) {
         if (listValues != null) {
-            long[] arr = new long[listValues.size()];
-            for (int i = 0; i < arr.length; i++) {
-                String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
-                arr[i] = Long.parseLong(string);
-                sortField(list, string, field);
-                storeField(list, string, field);
-            }
             if (listValues.size() > 0) {
+                long[] arr = new long[listValues.size()];
+                for (int i = 0; i < arr.length; i++) {
+                    String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
+                    arr[i] = Long.parseLong(string);
+                    sortField(list, string, field);
+                    storeField(list, string, field);
+                }
                 list.add(new LongPoint(field.getName(), arr));
             }
         } else {
-            list.add(new LongPoint(field.getName(), Long.parseLong(stringValue)));
-            sortField(list, stringValue, field);
-            storeField(list, stringValue, field);
+            if (StringUtils.isNotBlank(stringValue)) {
+                list.add(new LongPoint(field.getName(), Long.parseLong(stringValue)));
+                sortField(list, stringValue, field);
+                storeField(list, stringValue, field);
+            }
         }
     }
 
     private static void intFields(List<Field> list, String stringValue, List listValues, LuceneField field) {
         if (listValues != null) {
-            int[] arr = new int[listValues.size()];
-            for (int i = 0; i < arr.length; i++) {
-                String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
-                arr[i] = Integer.parseInt(string);
-                sortField(list, string, field);
-                storeField(list, string, field);
-            }
             if (listValues.size() > 0) {
+                int[] arr = new int[listValues.size()];
+                for (int i = 0; i < arr.length; i++) {
+                    String string = Objects.toString(listValues.get(i), StringUtils.EMPTY);
+                    arr[i] = Integer.parseInt(string);
+                    sortField(list, string, field);
+                    storeField(list, string, field);
+                }
                 list.add(new IntPoint(field.getName(), arr));
             }
         } else {
-            list.add(new IntPoint(field.getName(), Integer.parseInt(stringValue)));
-            sortField(list, stringValue, field);
-            storeField(list, stringValue, field);
+            if (StringUtils.isNotBlank(stringValue)) {
+                list.add(new IntPoint(field.getName(), Integer.parseInt(stringValue)));
+                sortField(list, stringValue, field);
+                storeField(list, stringValue, field);
+            }
         }
     }
 

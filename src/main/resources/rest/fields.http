@@ -1,0 +1,102 @@
+# 使用VSCode工具和REST Client插件，使用@定义变量，使用###分隔多个请求
+@host=http://localhost:9200
+@index={{host}}/service/index
+@name=fields
+
+###
+#string=StringField+Store.YES text=TextField+Store.NO
+{{index}}/open
+    ?name={{name}}
+
+{
+    "fields":[
+        {
+            "field": "string",
+            "type": "string"
+        },
+        {
+            "field": "text",
+            "type": "text"
+        },
+        {
+            "field": "store",
+            "type": "store"
+        },
+        {
+            "field": "int",
+            "type": "int"
+        },
+        {
+            "field": "long",
+            "type": "long"
+        },
+        {
+            "field": "float",
+            "type": "float"
+        },
+        {
+            "field": "date",
+            "type": "date",
+            "store":"yes"
+        },
+        {
+            "field": "double",
+            "type": "double"
+        },
+        {
+            "field": "binary",
+            "type": "binary",
+            "store":"yes"
+        }
+    ]
+}
+
+###
+#string text store支持可变多个值，int long date等类型维度不可变
+POST {{index}}/docs
+    ?name={{name}}
+
+{
+    "add":[
+        {
+            "string":"1",
+            "text":"",
+            "store":"",
+            "int":"1",
+            "long":"",
+            "date":"",
+            "float":"",
+            "double":"",
+            "binary":"YmFzZTY0"
+        },
+        {
+            "string":["2","3"],
+            "text":[],
+            "store":[],
+            "int":[],
+            "long":[],
+            "date":["2021-05-27","2021-05-28"],
+            "float":[],
+            "double":[],
+            "binary":[]
+        },
+        {
+            "string":"4"
+        }
+    ]
+}
+
+###
+{{index}}/close
+    ?name={{name}}
+
+###
+#正常流程：open打开索引，docs推送文档，close关闭索引，search搜索
+POST {{index}}/search
+    ?name={{name}}
+
+query=string:2
+
+###
+{{index}}/drop
+    ?name={{name}}

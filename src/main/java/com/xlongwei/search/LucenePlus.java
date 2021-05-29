@@ -139,21 +139,25 @@ public class LucenePlus implements ShutdownHookProvider {
         List<?> list = (List) map.get("add");
         if (list != null && list.size() > 0) {
             List<Document> docs = new ArrayList<>(list.size());
-            for (Object obj : list) {
-                Map row = (Map) obj;
-                List<Field> docFields = LuceneField.docFields(row, fields);
-                if (docFields.size() > 0) {
-                    Document doc = new Document();
-                    docFields.forEach(doc::add);
-                    docs.add(doc);
-                } else {
-                    return false;
+            try {
+                for (Object obj : list) {
+                    Map row = (Map) obj;
+                    List<Field> docFields = LuceneField.docFields(row, fields);
+                    if (docFields.size() > 0) {
+                        Document doc = new Document();
+                        docFields.forEach(doc::add);
+                        docs.add(doc);
+                    } else {
+                        return false;
+                    }
                 }
+                IndexWriter writer = getWriter(name, null);
+                writer.addDocuments(docs);
+                writer.flush();
+                writer.commit();
+            } catch (Exception e) {
+                return false;
             }
-            IndexWriter writer = getWriter(name, null);
-            writer.addDocuments(docs);
-            writer.flush();
-            writer.commit();
             closeSearcher(name);
             return true;
         }
