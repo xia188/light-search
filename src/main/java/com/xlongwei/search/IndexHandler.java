@@ -56,7 +56,7 @@ public class IndexHandler extends SearchHandler {
                 }
             }
         }
-        LucenePlus.getWriter(name, HandlerUtil.getParam(exchange, "analyzer"));
+        LucenePlus.getWriter(name);
         LucenePlus.fields(name, fields);
         fields = LucenePlus.fields(name);
         HandlerUtil.setResp(exchange, Collections.singletonMap("fields", fields));

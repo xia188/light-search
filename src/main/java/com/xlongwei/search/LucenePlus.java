@@ -65,14 +65,14 @@ public class LucenePlus implements ShutdownHookProvider {
         }
     }
 
-    public static IndexWriter getWriter(String name, String analyzer) throws Exception {
+    public static IndexWriter getWriter(String name) throws Exception {
         IndexWriter writer = writers.get(name);
         if (writer == null) {
             synchronized (writers) {
                 writer = writers.get(name);
                 if (writer == null) {
                     FSDirectory directory = NIOFSDirectory.open(Paths.get(index, name));
-                    writer = new IndexWriter(directory, new IndexWriterConfig(getAnalyzer(analyzer)));
+                    writer = new IndexWriter(directory, new IndexWriterConfig(getAnalyzer(name)));
                     writers.put(name, writer);
                 }
             }
@@ -96,7 +96,7 @@ public class LucenePlus implements ShutdownHookProvider {
         return searcher;
     }
 
-    public static Analyzer getAnalyzer(String analyzer) {
+    public static Analyzer getAnalyzer(String name) {
         return new StandardAnalyzer();
     }
 
@@ -151,7 +151,7 @@ public class LucenePlus implements ShutdownHookProvider {
                         return false;
                     }
                 }
-                IndexWriter writer = getWriter(name, null);
+                IndexWriter writer = getWriter(name);
                 writer.addDocuments(docs);
                 writer.flush();
                 writer.commit();

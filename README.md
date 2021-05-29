@@ -17,8 +17,13 @@
 
 1.  数据条数：677391
 2.  索引大小：26M（压缩后9.8M），索引参数：code:string,name:text
-3.  索引优化：20M（8.3M），索引参数：code:store,name:text
-4.  行政区划查询支持限定类型：省市区乡村，RegexpQuery(code,".{6}")，因此code也属于查询条件，还得用string类型
+3.  支持查询：name逐字匹配，code长度匹配（限定类型），code前缀匹配（限定地域）
+
+### logserver索引
+
+1.  配合[logserver](https://gitee.com/xlongwei/logserver)使用，改善搜索效果，但:=-等特殊符号处理不理想
+2.  索引参数：day:text,number:store,line:text
+3.  支持查询：line前缀匹配，day索引清理，number返回行号
 
 #### 索引规则
 
@@ -31,7 +36,7 @@
 type:string,text,store,int,long,float,double,date,binary
 sort:sorted,sortedset,numeric,sortednumeric
 store:yes,no
-
+#string text store支持可变多值，int long date等其他类型维度不可变，可以无值，但有值时必须内容合法
 string:建索引，不分词，默认存储，适合主键
 text:建索引，有分词，默认不存储，适合搜索字段
 store:仅存储，无索引，不分词，默认存储。code不用来搜索，因此store类型就够了

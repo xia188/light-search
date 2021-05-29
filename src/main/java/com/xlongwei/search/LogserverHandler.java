@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import com.networknt.utility.StringUtils;
 
@@ -14,13 +13,13 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BooleanQuery.Builder;
-import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.util.BytesRef;
 
 import io.undertow.server.HttpServerExchange;
 
@@ -38,7 +37,7 @@ public class LogserverHandler extends SearchHandler {
     public void delete(HttpServerExchange exchange) throws Exception {
         String day = HandlerUtil.getParam(exchange, "day");
         if (StringUtils.isNotBlank(day)) {
-            IndexWriter writer = LucenePlus.getWriter("logserver", null);
+            IndexWriter writer = LucenePlus.getWriter("logserver");
             // 删除day之前的索引，因为logserver已经tgz压缩了日志文件，搜索也没用了
             writer.deleteDocuments(new TermRangeQuery("day", null, new BytesRef(day), false, false));
             // writer.deleteDocuments(new Term("day", day));
@@ -60,15 +59,11 @@ public class LogserverHandler extends SearchHandler {
             builder.add(new TermQuery(new Term("day", day)), Occur.MUST);
         }
         if (StringUtils.isNotBlank(search)) {
-            StringTokenizer tokenizer = new StringTokenizer(search.toLowerCase());
-            while (tokenizer.hasMoreTokens()) {
-                String nextToken = tokenizer.nextToken();
-                builder.add(new RegexpQuery(new Term("line", nextToken + "*")), Occur.MUST);
-            }
+            builder.add(new RegexpQuery(new Term("line", search.toLowerCase() + "*")), Occur.MUST);
         }
         BooleanQuery query = builder.build();
         IndexSearcher searcher = LucenePlus.getSearcher("logserver");
-        TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE);
+        TopDocs topDocs = searcher.search(query, 100000);// 1000*100
         if (topDocs.scoreDocs != null && topDocs.scoreDocs.length > 0) {
             List<String> lines = new LinkedList<>();
             for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
