@@ -63,7 +63,7 @@ POST {{index}}/docs
             "text":"",
             "store":"",
             "int":"1",
-            "long":"",
+            "long":"1",
             "date":"",
             "float":"",
             "double":"",
@@ -81,7 +81,8 @@ POST {{index}}/docs
             "binary":[]
         },
         {
-            "string":"4"
+            "string":"4",
+            "int":"2"
         }
     ]
 }
@@ -95,7 +96,13 @@ POST {{index}}/docs
 POST {{index}}/search
     ?name={{name}}
 
-query=string:2
+{
+    "int":"[1,2]"
+}
+
+###
+{{index}}/stats
+    ?name={{name}}
 
 ###
 {{index}}/drop

@@ -43,7 +43,17 @@ POST {{index}}/docs
 POST {{index}}/search
     ?name={{name}}
 
-query=name:四川邻水
+{
+    "code":"511623"
+}
+
+###
+{{index}}/delete
+    ?name={{name}}
+
+{
+    "code":"511623"
+}
 
 ###
 {{index}}/drop

@@ -97,6 +97,22 @@ public class LuceneIndex {
         return Paths.get(index, name);
     }
 
+    /** 获取file大小 */
+    public static long size(File file) {
+        if (file.isFile()) {
+            return file.length();
+        }
+        long size = 0;
+        for (File f : file.listFiles()) {
+            if (f.isFile()) {
+                size += f.length();
+            } else {
+                size += size(f);
+            }
+        }
+        return size;
+    }
+
     // load indices=Map<String, LuceneIndex> from indices.json
     private static void load() {
         File file = indicesFile();

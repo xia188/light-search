@@ -11,10 +11,9 @@ import java.util.Objects;
 import com.networknt.utility.StringUtils;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.RegexpQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 
@@ -86,21 +85,31 @@ public class IndexHandler extends SearchHandler {
         }
     }
 
+    /** {delete:{name:value}} */
+    public void delete(HttpServerExchange exchange) throws Exception {
+        String name = HandlerUtil.getParam(exchange, "name");
+        if (StringUtils.isBlank(name) || !LuceneIndex.exists(name)) {
+            HandlerUtil.setResp(exchange, Collections.singletonMap("delete", false));
+        } else {
+            Map<String, Object> map = HandlerUtil.fromJson(HandlerUtil.getBodyString(exchange));
+            boolean delete = map == null || map.isEmpty() ? false : LucenePlus.delete(name, map);
+            HandlerUtil.setResp(exchange, Collections.singletonMap("delete", delete));
+        }
+    }
+
     /** {name,query} */
     public void search(HttpServerExchange exchange) throws Exception {
         String name = HandlerUtil.getParam(exchange, "name");
-        String query = HandlerUtil.getParam(exchange, "query");
-        if (StringUtils.isBlank(name) || StringUtils.isBlank(query) || !query.contains(":")) {
+        if (StringUtils.isBlank(name) || !LuceneIndex.exists(name)) {
             return;
         }
-        LuceneIndex index = LuceneIndex.index(name);
-        if (index == null) {
+        Map<String, Object> map = HandlerUtil.fromJson(HandlerUtil.getBodyString(exchange));
+        if (map == null || map.isEmpty()) {
             return;
         }
-        // 实现简单的QueryParser功能 field:value
-        String[] split = query.split("[:]");
+        Query query = LucenePlus.termQuery(name, map);
         IndexSearcher indexSearcher = LucenePlus.getSearcher(name);
-        TopDocs search = indexSearcher.search(new RegexpQuery(new Term(split[0], split[1].toLowerCase() + "*")),
+        TopDocs search = indexSearcher.search(query,
                 (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "n"), 10L));
         List<Map<String, Object>> list = new ArrayList<>();
         if (search.scoreDocs != null && search.scoreDocs.length > 0) {
@@ -149,10 +158,10 @@ public class IndexHandler extends SearchHandler {
         File file = LuceneIndex.path(name).toFile();
         if (file.exists()) {
             Map<String, Object> map = new HashMap<>();
-            map.put("size", file.length() / 1024 / 1024 + "M");
+            long size = LuceneIndex.size(file), k = 1024, m = k * k;
+            map.put("size", size > m ? (size / m + "M") : size / k + "K");
             IndexSearcher searcher = LucenePlus.getSearcher(name);
-            TopDocs search = searcher.search(new MatchAllDocsQuery(), Integer.MAX_VALUE);
-            map.put("total", search.totalHits.value);
+            map.put("total", searcher.count(new MatchAllDocsQuery()));
             map.put(name, LuceneIndex.index(name));
             HandlerUtil.setResp(exchange, map);
         }

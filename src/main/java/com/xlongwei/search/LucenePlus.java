@@ -2,7 +2,9 @@ package com.xlongwei.search;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -11,11 +13,24 @@ import com.networknt.server.ShutdownHookProvider;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FloatPoint;
+import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchNoDocsQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.RegexpQuery;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSLockFactory;
 import org.apache.lucene.store.LockFactory;
@@ -172,6 +187,89 @@ public class LucenePlus implements ShutdownHookProvider {
             return true;
         }
         return false;
+    }
+
+    /** {delete:{name:value}} */
+    public static boolean delete(String name, Map<String, Object> row) throws Exception {
+        Query query = termQuery(name, row);
+        IndexWriter writer = getWriter(name);
+        writer.deleteDocuments(query);
+        writer.flush();
+        writer.commit();
+        closeSearcher(name);
+        return true;
+    }
+
+    public static Query termQuery(String name, Map<String, Object> map) {
+        List<LuceneField> fields = LuceneIndex.fields(name);
+        if (fields == null || fields.isEmpty()) {
+            return new MatchNoDocsQuery();
+        }
+        List<Query> queries = new LinkedList<>();
+        for (LuceneField field : fields) {
+            if (map.containsKey(field.getName())) {
+                queries.add(termQuery(field, map.get(field.getName()).toString()));
+            }
+        }
+        if (queries.size() > 1) {
+            Builder builder = new BooleanQuery.Builder();
+            queries.stream().forEach(query -> builder.add(query, Occur.MUST));
+            queries = Arrays.asList(builder.build());
+        }
+        return queries.get(0);
+    }
+
+    public static Query termQuery(LuceneField field, String value) {
+        int pos = value.indexOf(',');
+        switch (field.getType()) {
+            case "string":
+                if (pos == -1) {
+                    return new TermQuery(new Term(field.getName(), value));
+                } else {
+                    return TermRangeQuery.newStringRange(field.getName(), value.substring(1, pos),
+                            value.substring(pos + 1, value.length() - 1), '[' == value.charAt(0),
+                            ']' == value.charAt(value.length() - 1));
+                }
+            case "text":
+                return new RegexpQuery(new Term(field.getName(), value.toLowerCase() + "*"));
+            case "int":
+                if (pos == -1) {
+                    return IntPoint.newExactQuery(field.getName(), Integer.parseInt(value));
+                } else {
+                    return IntPoint.newRangeQuery(field.getName(), Integer.parseInt(value.substring(1, pos)),
+                            Integer.parseInt(value.substring(pos + 1, value.length() - 1)));
+                }
+            case "long":
+                if (pos == -1) {
+                    return LongPoint.newExactQuery(field.getName(), Long.parseLong(value));
+                } else {
+                    return LongPoint.newRangeQuery(field.getName(), Long.parseLong(value.substring(1, pos)),
+                            Long.parseLong(value.substring(pos + 1, value.length() - 1)));
+                }
+            case "float":
+                if (pos == -1) {
+                    return FloatPoint.newExactQuery(field.getName(), Float.parseFloat(value));
+                } else {
+                    return FloatPoint.newRangeQuery(field.getName(), Float.parseFloat(value.substring(1, pos)),
+                            Float.parseFloat(value.substring(pos + 1, value.length() - 1)));
+                }
+            case "double":
+                if (pos == -1) {
+                    return DoublePoint.newExactQuery(field.getName(), Double.parseDouble(value));
+                } else {
+                    return DoublePoint.newRangeQuery(field.getName(), Double.parseDouble(value.substring(1, pos)),
+                            Double.parseDouble(value.substring(pos + 1, value.length() - 1)));
+                }
+            case "date":
+                if (pos == -1) {
+                    return LongPoint.newExactQuery(field.getName(), HandlerUtil.parseDate(value, null).getTime());
+                } else {
+                    return LongPoint.newRangeQuery(field.getName(),
+                            HandlerUtil.parseDate(value.substring(1, pos), null).getTime(),
+                            HandlerUtil.parseDate(value.substring(pos + 1, value.length() - 1), null).getTime());
+                }
+        }
+        throw new IllegalArgumentException("termQuery unsupport field type " + field.getName());
     }
 
     @Override

@@ -27,9 +27,10 @@
 
 #### 索引规则
 
-1.  IndexHandler处理/service/index/*请求，校验参数，响应报文
-2.  LucenePlus管理索引：open打开索引，docs推送文档，close关闭索引，search搜索，drop删除索引
+1.  IndexHandler处理/service/index/*请求，校验参数，响应报文；/service/index/indices列出索引
+2.  LucenePlus管理索引：open打开索引，docs推送文档，close关闭索引，search搜索，delete删除文档，stats状态，drop删除索引
 3.  LuceneField处理字段：POSt /service/index/open {name:索引,fields:[{field:名称,type:类型,store:存储,sort:排序}]}}
+4.  删除和搜索文档规则：{name:value}，string类型支持{stirng1,string2]表示范围，text类型匹配value*，数值类型支持[int1,int2]包含边界值
 
 ```
 #indices.json
