@@ -32,6 +32,11 @@
 3.  LuceneField处理字段：POSt /service/index/open {name:索引,fields:[{field:名称,type:类型,store:存储,sort:排序}]}}
 
 ```
+#indices.json
+analyzer:std，分词
+directory:nio mmap，目录
+lockFactory:no fs，锁
+realtime:no yes，实时
 #field,type:必填，sort,store可选
 type:string,text,store,int,long,float,double,date,binary
 sort:sorted,sortedset,numeric,sortednumeric

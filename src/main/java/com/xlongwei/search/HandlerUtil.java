@@ -42,6 +42,7 @@ public class HandlerUtil {
     private static final AttachmentKey<Object> RESP = AttachmentKey.create(Object.class);
     private static String[] patterns = new String[] { "yyyy-MM-dd HH:mm:ss", "yyyyMMddHHmmss", "yyyy-MM-dd", "yyyyMMdd",
             "yyyy/MM/dd", "yyyy.MM.dd", "yyyy-MM-ddTHH:mm:ss" };
+    private static String[] trues = new String[] { "true", "yes", "on", "t", "y", "1" };
 
     /**
      * 解析body为Map<String, Object> <br>
@@ -220,6 +221,19 @@ public class HandlerUtil {
             }
         }
         return defDouble;
+    }
+
+    public static boolean parseBoolean(String string, boolean defBoolean) {
+        if (StringUtils.isNotBlank(string)) {
+            string = string.toLowerCase();
+            for (String str : trues) {
+                if (str.equals(string)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return defBoolean;
     }
 
     /** 仅支持map，其他类型需手动响应 */

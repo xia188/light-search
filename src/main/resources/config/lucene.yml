@@ -1,1 +1,3 @@
 index: ${lucene.index:index}
+#index/indices.json
+indices: ${lucene.indices:indices.json}

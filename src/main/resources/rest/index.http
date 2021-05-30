@@ -48,3 +48,10 @@ query=name:四川邻水
 ###
 {{index}}/drop
     ?name={{name}}
+
+###
+{{index}}/stats
+    ?name={{name}}
+
+###
+{{index}}/indices
