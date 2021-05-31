@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see https://gitee.com/Myzhang/luceneplus
  */
 @Slf4j
-@SuppressWarnings({ "rawtypes" })
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class LucenePlus implements ShutdownHookProvider {
 
     private static Map<String, IndexWriter> writers = new HashMap<>();
@@ -161,10 +161,31 @@ public class LucenePlus implements ShutdownHookProvider {
         if (fields == null || fields.isEmpty()) {
             return false;
         }
-        List<?> list = (List) map.get("add");
-        if (list != null && list.size() > 0) {
-            List<Document> docs = new ArrayList<>(list.size());
-            try {
+        boolean commit = false;
+        IndexWriter writer = null;
+        try {
+            Object object = map.get("delete");
+            if (object != null) {
+                List<Query> deletes = new ArrayList<>();
+                if (object instanceof Map) {
+                    deletes.add(termQuery(fields, (Map) object));
+                } else if (object instanceof List) {
+                    List list = (List) object;
+                    for (Object obj : list) {
+                        deletes.add(termQuery(fields, (Map) obj));
+                    }
+                } else {
+                    return false;
+                }
+                writer = getWriter(name);
+                for (Query deleteQuery : deletes) {
+                    writer.deleteDocuments(deleteQuery);
+                }
+                commit = true;
+            }
+            List<?> list = (List) map.get("add");
+            if (list != null && list.size() > 0) {
+                List<Document> docs = new ArrayList<>(list.size());
                 for (Object obj : list) {
                     Map row = (Map) obj;
                     List<Field> docFields = LuceneField.docFields(row, fields);
@@ -173,35 +194,35 @@ public class LucenePlus implements ShutdownHookProvider {
                         docFields.forEach(doc::add);
                         docs.add(doc);
                     } else {
-                        return false;
+                        throw new IllegalArgumentException("add row can't be empty");
                     }
                 }
-                IndexWriter writer = getWriter(name);
+                writer = writer != null ? writer : getWriter(name);
                 writer.addDocuments(docs);
+                commit = true;
+            }
+            return commit;
+        } catch (Exception e) {
+            if (writer != null) {
+                writer.rollback();
+                writer = null;
+            }
+            return false;
+        } finally {
+            if (commit && writer != null) {
                 writer.flush();
                 writer.commit();
-            } catch (Exception e) {
-                return false;
+                closeSearcher(name);
             }
-            closeSearcher(name);
-            return true;
         }
-        return false;
-    }
-
-    /** {delete:{name:value}} */
-    public static boolean delete(String name, Map<String, Object> row) throws Exception {
-        Query query = termQuery(name, row);
-        IndexWriter writer = getWriter(name);
-        writer.deleteDocuments(query);
-        writer.flush();
-        writer.commit();
-        closeSearcher(name);
-        return true;
     }
 
     public static Query termQuery(String name, Map<String, Object> map) {
         List<LuceneField> fields = LuceneIndex.fields(name);
+        return termQuery(fields, map);
+    }
+
+    public static Query termQuery(List<LuceneField> fields, Map<String, Object> map) {
         if (fields == null || fields.isEmpty()) {
             return new MatchNoDocsQuery();
         }

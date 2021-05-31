@@ -16,7 +16,8 @@
         },
         {
             "field": "name",
-            "type": "text"
+            "type": "text",
+            "store":"yes"
         }
     ]
 }
@@ -35,6 +36,34 @@ POST {{index}}/docs
 }
 
 ###
+#delete
+POST {{index}}/docs
+    ?name={{name}}
+
+{
+    "delete":{
+        "code":"511623"
+    }
+}
+
+###
+#update=delete + add
+POST {{index}}/docs
+    ?name={{name}}
+
+{
+    "delete":{
+        "code":"511623"
+    },
+    "add":[
+        {
+            "code":"511623",
+            "name":"四川省邻水县"
+        }
+    ]
+}
+
+###
 {{index}}/close
     ?name={{name}}
 
@@ -42,14 +71,8 @@ POST {{index}}/docs
 #正常流程：open打开索引，docs推送文档，close关闭索引，search搜索
 POST {{index}}/search
     ?name={{name}}
-
-{
-    "code":"511623"
-}
-
-###
-{{index}}/delete
-    ?name={{name}}
+    &offset=1
+    &limit=1
 
 {
     "code":"511623"

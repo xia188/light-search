@@ -85,18 +85,6 @@ public class IndexHandler extends SearchHandler {
         }
     }
 
-    /** {delete:{name:value}} */
-    public void delete(HttpServerExchange exchange) throws Exception {
-        String name = HandlerUtil.getParam(exchange, "name");
-        if (StringUtils.isBlank(name) || !LuceneIndex.exists(name)) {
-            HandlerUtil.setResp(exchange, Collections.singletonMap("delete", false));
-        } else {
-            Map<String, Object> map = HandlerUtil.fromJson(HandlerUtil.getBodyString(exchange));
-            boolean delete = map == null || map.isEmpty() ? false : LucenePlus.delete(name, map);
-            HandlerUtil.setResp(exchange, Collections.singletonMap("delete", delete));
-        }
-    }
-
     /** {name,query} */
     public void search(HttpServerExchange exchange) throws Exception {
         String name = HandlerUtil.getParam(exchange, "name");
@@ -107,15 +95,17 @@ public class IndexHandler extends SearchHandler {
         if (map == null || map.isEmpty()) {
             return;
         }
+        int offset = (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "offset"), 0);
+        int limit = (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "limit"), 10L);
         Query query = LucenePlus.termQuery(name, map);
-        IndexSearcher indexSearcher = LucenePlus.getSearcher(name);
-        TopDocs search = indexSearcher.search(query,
-                (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "n"), 10L));
+        IndexSearcher searcher = LucenePlus.getSearcher(name);
+        TopDocs search = searcher.search(query, offset + limit);
         List<Map<String, Object>> list = new ArrayList<>();
-        if (search.scoreDocs != null && search.scoreDocs.length > 0) {
+        if (search.scoreDocs != null && search.scoreDocs.length > offset) {
             List<LuceneField> fields = LuceneIndex.fields(name);
-            for (ScoreDoc scoreDoc : search.scoreDocs) {
-                Document doc = indexSearcher.doc(scoreDoc.doc);
+            for (int i = offset; i < search.scoreDocs.length; i++) {
+                ScoreDoc scoreDoc = search.scoreDocs[i];
+                Document doc = searcher.doc(scoreDoc.doc);
                 Map<String, Object> item = new HashMap<>();
                 for (LuceneField field : fields) {
                     item.put(field.getName(), field.resolve(doc));
