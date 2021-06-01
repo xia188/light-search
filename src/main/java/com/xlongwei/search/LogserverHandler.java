@@ -14,7 +14,6 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
@@ -59,7 +58,8 @@ public class LogserverHandler extends SearchHandler {
             builder.add(new TermQuery(new Term("day", day)), Occur.MUST);
         }
         if (StringUtils.isNotBlank(search)) {
-            builder.add(new RegexpQuery(new Term("line", search.toLowerCase() + "*")), Occur.MUST);
+            builder.add(LucenePlus.termQuery("logserver", Collections.singletonMap("line", search)), Occur.MUST);
+
         }
         BooleanQuery query = builder.build();
         IndexSearcher searcher = LucenePlus.getSearcher("logserver");

@@ -136,6 +136,13 @@ public class IndexHandler extends SearchHandler {
         }
     }
 
+    public void analyze(HttpServerExchange exchange) throws Exception {
+        String name = HandlerUtil.getParam(exchange, "name");
+        String text = HandlerUtil.getBodyString(exchange);
+        List<String> list = LucenePlus.analyze(name, text);
+        HandlerUtil.setResp(exchange, Collections.singletonMap("fenci", list));
+    }
+
     public void indices(HttpServerExchange exchange) throws Exception {
         HandlerUtil.setResp(exchange, LuceneIndex.indices());
     }

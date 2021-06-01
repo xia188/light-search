@@ -4,7 +4,7 @@
 基于light-4j和lucene的搜索服务
 
 #### 软件架构
-总体原则是搜索与数据解耦，light-search支持搜索和创建索引，light4j提供具体数据。前期实现了DistrictIndexer从light4j拉数据来建索引，后期计划实现light4j向DistrictHandler推数据创建索引，见[DistrictUtilTest](https://gitee.com/xlongwei/light4j/blob/master/src/test/java/com/xlongwei/light4j/DistrictUtilTest.java)。目前只是用了StandardAnalyzer，后期会考虑Ansj分词。
+总体原则是搜索与数据解耦，light-search支持搜索和创建索引，light4j提供具体数据。前期实现了DistrictIndexer从light4j拉数据来建索引，后期计划实现light4j向DistrictHandler推数据创建索引，见[DistrictUtilTest](https://gitee.com/xlongwei/light4j/blob/master/src/test/java/com/xlongwei/light4j/DistrictUtilTest.java)。目前只是用了StandardAnalyzer，后期会考虑Ansj分词（由于太耗内存，另建分支集成）。
 
 
 #### 安装教程
@@ -28,7 +28,7 @@
 #### 索引规则
 
 1.  IndexHandler处理/service/index/*请求，校验参数，响应报文；/service/index/indices列出索引
-2.  LucenePlus管理索引：open打开索引，docs增删文档，close关闭索引，search搜索，stats状态，drop删除索引
+2.  LucenePlus管理索引：open打开索引，docs增删文档，close关闭索引，search搜索，analyze分词，stats状态，drop删除索引
 3.  LuceneField处理字段：POSt /service/index/open {name:索引,fields:[{field:名称,type:类型,store:存储,sort:排序}]}}
 4.  删除和搜索文档规则：{name:value}，string类型支持{stirng1,string2]表示范围，text类型匹配value*，数值类型支持[int1,int2]包含边界值
 

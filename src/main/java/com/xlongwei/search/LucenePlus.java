@@ -1,5 +1,6 @@
 package com.xlongwei.search;
 
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,11 +8,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.networknt.server.ShutdownHookProvider;
+import com.networknt.utility.StringUtils;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
@@ -28,7 +33,6 @@ import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.store.Directory;
@@ -217,19 +221,68 @@ public class LucenePlus implements ShutdownHookProvider {
         }
     }
 
-    public static Query termQuery(String name, Map<String, Object> map) {
+    public static Query termQuery(String name, Map<String, Object> map) throws Exception {
         List<LuceneField> fields = LuceneIndex.fields(name);
-        return termQuery(fields, map);
+        if (fields == null || fields.isEmpty() || map == null || map.isEmpty()) {
+            return new MatchNoDocsQuery();
+        }
+        // text类型预先分词
+        Map<String, Object> copy = null;
+        for (Entry<String, Object> entry : map.entrySet()) {
+            for (LuceneField field : fields) {
+                if (!entry.getKey().equals(field.getName())) {
+                    continue;
+                }
+                if ("text".equals(field.getType())) {
+                    String value = entry.getValue() == null ? StringUtils.EMPTY
+                            : StringUtils.trimToEmpty(entry.getValue().toString());
+                    if (StringUtils.isNotBlank(value)) {
+                        List<String> list = analyze(name, value);
+                        // entry.setValue(list);
+                        if (copy == null) {
+                            copy = new HashMap<>(map);
+                        }
+                        copy.put(entry.getKey(), list);
+                    }
+                }
+                break;
+            }
+        }
+        return termQuery(fields, copy != null ? copy : map);
+    }
+
+    public static List<String> analyze(String name, String text) throws Exception {
+        List<String> list = new LinkedList<>();
+        if (StringUtils.isNotBlank(text)) {
+            Analyzer analyzer = getAnalyzer(name);
+            TokenStream tokenStream = analyzer.tokenStream("contents", new StringReader(text));
+            CharTermAttribute term = tokenStream.addAttribute(CharTermAttribute.class);
+            tokenStream.reset();
+            while (tokenStream.incrementToken()) {
+                list.add(term.toString());
+            }
+            tokenStream.end();
+            tokenStream.close();
+        }
+        return list;
     }
 
     public static Query termQuery(List<LuceneField> fields, Map<String, Object> map) {
-        if (fields == null || fields.isEmpty()) {
+        if (fields == null || fields.isEmpty() || map == null || map.isEmpty()) {
             return new MatchNoDocsQuery();
         }
         List<Query> queries = new LinkedList<>();
         for (LuceneField field : fields) {
-            if (map.containsKey(field.getName())) {
-                queries.add(termQuery(field, map.get(field.getName()).toString()));
+            Object value = map.get(field.getName());
+            if (value != null) {
+                if ("text".equals(field.getType()) && value instanceof List) {
+                    List list = (List) value;
+                    for (Object item : list) {
+                        queries.add(termQuery(field, item.toString()));
+                    }
+                } else {
+                    queries.add(termQuery(field, value.toString()));
+                }
             }
         }
         if (queries.size() > 1) {
@@ -237,7 +290,7 @@ public class LucenePlus implements ShutdownHookProvider {
             queries.stream().forEach(query -> builder.add(query, Occur.MUST));
             queries = Arrays.asList(builder.build());
         }
-        return queries.get(0);
+        return queries.isEmpty() ? new MatchNoDocsQuery() : queries.get(0);
     }
 
     public static Query termQuery(LuceneField field, String value) {
@@ -252,7 +305,7 @@ public class LucenePlus implements ShutdownHookProvider {
                             ']' == value.charAt(value.length() - 1));
                 }
             case "text":
-                return new RegexpQuery(new Term(field.getName(), value.toLowerCase() + "*"));
+                return new TermQuery(new Term(field.getName(), value));
             case "int":
                 if (pos == -1) {
                     return IntPoint.newExactQuery(field.getName(), Integer.parseInt(value));

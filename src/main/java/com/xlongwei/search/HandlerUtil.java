@@ -108,6 +108,8 @@ public class HandlerUtil {
                 if (string.contains("{")) {
                     Map<String, Object> bodyMap = fromJson(string);
                     if (bodyMap != null && bodyMap.size() > 0) {
+                        // body里的map不能覆盖query
+                        bodyMap.putAll(body);
                         body.putAll(bodyMap);
                     }
                 } else if (string.contains("=")) {

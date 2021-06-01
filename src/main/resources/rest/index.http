@@ -79,6 +79,12 @@ POST {{index}}/search
 }
 
 ###
+{{index}}/analyze
+    ?name={{name}}
+
+四川省广安市邻水县
+
+###
 {{index}}/drop
     ?name={{name}}
 

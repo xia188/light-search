@@ -45,12 +45,24 @@ POST {{index}}/docs
 }
 
 ###
+{{index}}/search
+    ?name={{name}}
+
+{"line":"bankCardNumber=6215340301505474410"}
+
+###
+{{index}}/analyze
+    ?name={{name}}
+
+bankCardNumber=6215340301505474410
+
+###
 {{index}}/close
     ?name={{name}}
 
 ###
 POST {{host}}/service/logserver/lines
-    ?search=INFO
+    ?search=bankCardNumber%3D6215340301505474410
     # &logs=all.logs
 
 ###
