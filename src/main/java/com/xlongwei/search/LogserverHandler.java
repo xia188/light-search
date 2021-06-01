@@ -2,8 +2,10 @@ package com.xlongwei.search;
 
 import java.time.LocalDate;
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.networknt.utility.StringUtils;
 
@@ -68,22 +70,18 @@ public class LogserverHandler extends SearchHandler {
         IndexSearcher searcher = LucenePlus.getSearcher(name);
         TopDocs topDocs = searcher.search(query, 100000);// 1000*100
         if (topDocs.scoreDocs != null && topDocs.scoreDocs.length > 0) {
-            List<Integer[]> pages = new LinkedList<>();
-            int currentPage = 0;
-            Integer[] arr = null;
+            Map<Integer, Integer> pages = new HashMap<>();
             for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
                 Document doc = searcher.doc(scoreDoc.doc);
                 int line = Integer.parseInt(doc.get("number"));
-                int calcPage = (line - 1) / pageSize + 1;
-                if (calcPage > currentPage) {
-                    arr = new Integer[] { calcPage, 1 };
-                    pages.add(arr);
-                    currentPage = calcPage;
-                } else {
-                    arr[1] += 1;
-                }
+                Integer calcPage = (line - 1) / pageSize + 1;
+                Integer pageCount = pages.get(calcPage);
+                pages.put(calcPage, pageCount == null ? 1 : pageCount + 1);
             }
-            return pages;
+            return pages.entrySet().stream().map(entry -> new Integer[] { entry.getKey(), entry.getValue() })
+                    .sorted((arr1, arr2) -> {
+                        return arr1[0].compareTo(arr2[0]);
+                    }).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
