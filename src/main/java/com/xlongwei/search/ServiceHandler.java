@@ -1,6 +1,8 @@
 package com.xlongwei.search;
 
+import java.lang.reflect.Modifier;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 
 import com.networknt.handler.LightHttpHandler;
@@ -14,6 +16,24 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ServiceHandler implements LightHttpHandler {
+
+    public ServiceHandler() {
+        String clazzName = getClass().getName();
+        String packageName = clazzName.substring(0, clazzName.lastIndexOf('.'));
+        List<Class<?>> clazzList = HandlerUtil.scanClass(null, packageName, false);
+        for (Class<?> clazz : clazzList) {
+            boolean isAbstract = Modifier.isAbstract(clazz.getModifiers());
+            boolean isSearch = SearchHandler.class.isAssignableFrom(clazz);
+            if (!isAbstract && isSearch) {
+                try {
+                    log.info("{} => {}", SearchHandler.name(clazz), clazz.getName());
+                    clazz.getConstructor().newInstance();
+                } catch (Exception e) {
+                    log.warn("fail to init {}", clazz);
+                }
+            }
+        }
+    }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {

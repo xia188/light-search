@@ -35,7 +35,7 @@ public abstract class SearchHandler implements LightHttpHandler {
             boolean isVoid = method.getReturnType().equals(Void.TYPE);
             if (isPublic && hasExchange && isVoid) {
                 methods.put(method.getName(), method);
-                log.info("{}/{} => {}", name, method.getName(), method);
+                log.info("{}/{}", name, method.getName());
             }
         }
     }
@@ -44,10 +44,7 @@ public abstract class SearchHandler implements LightHttpHandler {
      * DistrictHandler => district
      */
     public String name() {
-        String simpleName = getClass().getSimpleName();
-        int handler = simpleName.indexOf("Handler");
-        String name = handler > 0 ? simpleName.substring(0, handler) : simpleName;
-        return name.substring(0, 1).toLowerCase() + name.substring(1);
+        return name(getClass());
     }
 
     @Override
@@ -83,5 +80,12 @@ public abstract class SearchHandler implements LightHttpHandler {
 
     public static SearchHandler handler(String name) {
         return handlers.get(name);
+    }
+
+    public static String name(Class<?> clazz) {
+        String simpleName = clazz.getSimpleName();
+        int handler = simpleName.indexOf("Handler");
+        String name = handler > 0 ? simpleName.substring(0, handler) : simpleName;
+        return name.substring(0, 1).toLowerCase() + name.substring(1);
     }
 }

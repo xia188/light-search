@@ -1,16 +1,23 @@
 package com.xlongwei.search;
 
+import java.io.File;
 import java.io.InputStream;
+import java.net.JarURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Deque;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -186,7 +193,16 @@ public class HandlerUtil {
     /** 获取日期参数 */
     public static Date parseDate(String string, Date defDate) {
         if (StringUtils.isNotBlank(string)) {
-            int length = string.length();
+            int length = string.length(), p1 = 13, p2 = 19;
+            // System.currentTimeMillis
+            if (length == p1 && string.matches("\\d+")) {
+                return new Date(Long.parseLong(string));
+            }
+            // yyyy-MM-dd HH:mm:ss.SSS
+            if (length > p2 && '.' == string.charAt(p2)) {
+                string = string.substring(0, p2);
+                length = p2;
+            }
             // yyyyMd=6 yyyy-MM-dd HH:mm:ss=19
             if (6 <= length && length <= 19) {
                 for (String pattern : patterns) {
@@ -277,5 +293,76 @@ public class HandlerUtil {
             log.debug(e.getMessage(), e);
         }
         return StringUtils.EMPTY;
+    }
+
+    /** 扫描包下的类 */
+    public static List<Class<?>> scanClass(ClassLoader classLoader, String packageName, boolean recursive) {
+        List<Class<?>> list = new LinkedList<>();
+        if (classLoader == null) {
+            classLoader = Thread.currentThread().getContextClassLoader();
+        }
+        String resourceName = packageName.replace('.', '/');
+        try {
+            Enumeration<URL> resources = classLoader.getResources(resourceName);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                if ("file".equals(url.getProtocol())) {
+                    List<String> dirFiles = dirFiles(new File(url.getPath()), recursive);
+                    for (String dirFile : dirFiles) {
+                        if (dirFile.endsWith(".class") && -1 == dirFile.indexOf('$')) {
+                            dirFile = dirFile.replace(File.separatorChar, '.');
+                            String className = dirFile.substring(dirFile.indexOf(packageName),
+                                    dirFile.lastIndexOf('.'));
+                            Class<?> clazz = Class.forName(className);
+                            list.add(clazz);
+                        }
+                    }
+                } else if ("jar".equals(url.getProtocol())) {
+                    JarFile jarFile = ((JarURLConnection) url.openConnection()).getJarFile();
+                    List<String> jarEntries = jarEntries(jarFile, resourceName, recursive);
+                    for (String jarEntry : jarEntries) {
+                        if (jarEntry.endsWith(".class") && -1 == jarEntry.indexOf('$')) {
+                            jarEntry = jarEntry.replace('/', '.');
+                            String className = jarEntry.substring(jarEntry.indexOf(packageName),
+                                    jarEntry.lastIndexOf('.'));
+                            Class<?> clazz = Class.forName(className, false, classLoader);
+                            list.add(clazz);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("fail to listPackage: {}", e.getMessage());
+        }
+        return list;
+    }
+
+    private static List<String> jarEntries(JarFile jarFile, String packageName, boolean recursive) throws Exception {
+        List<String> list = new LinkedList<>();
+        Enumeration<JarEntry> entries = jarFile.entries();
+        while (entries.hasMoreElements()) {
+            JarEntry entry = entries.nextElement();
+            String name = entry.getName();
+            if (name.contains(packageName)) {
+                list.add(name);
+            }
+        }
+        return list;
+    }
+
+    private static List<String> dirFiles(File file, boolean recursive) throws Exception {
+        List<String> list = new LinkedList<>();
+        if (file.isFile()) {
+            list.add(file.getAbsolutePath());
+        } else {
+            for (File child : file.listFiles()) {
+                if (child.isFile()) {
+                    list.add(child.getAbsolutePath());
+                } else if (recursive) {
+                    list.addAll(dirFiles(child, recursive));
+                }
+            }
+        }
+        return list;
     }
 }

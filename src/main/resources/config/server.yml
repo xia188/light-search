@@ -1,3 +1,4 @@
+ip: 0.0.0.0
 httpPort: ${httpPort:9200}
 enableHttp: true
 enableHttps: false
