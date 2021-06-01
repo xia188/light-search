@@ -26,13 +26,14 @@ public class LogserverHandler extends SearchHandler {
 
     private static String name = SearchHandler.name(LogserverHandler.class);
 
-    public void lines(HttpServerExchange exchange) throws Exception {
+    public void pages(HttpServerExchange exchange) throws Exception {
         String logs = HandlerUtil.getParam(exchange, "logs");
         String search = HandlerUtil.getParam(exchange, "search");
         String day = StringUtils.isBlank(logs) ? null
                 : (logs.contains("-") ? logs.substring(logs.lastIndexOf(".") + 1) : LocalDate.now().toString());
-        List<String> lines = lines(day, search);
-        HandlerUtil.setResp(exchange, Collections.singletonMap("lines", lines));
+        int pageSize = (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "pageSize"), 1000L);
+        List<Integer[]> pages = pages(day, search, pageSize);
+        HandlerUtil.setResp(exchange, Collections.singletonMap("pages", pages));
     }
 
     public void delete(HttpServerExchange exchange) throws Exception {
@@ -51,7 +52,7 @@ public class LogserverHandler extends SearchHandler {
         }
     }
 
-    public static List<String> lines(String day, String search) throws Exception {
+    public static List<Integer[]> pages(String day, String search, int pageSize) throws Exception {
         if (StringUtils.isBlank(day) && StringUtils.isBlank(search)) {
             return Collections.emptyList();
         }
@@ -67,12 +68,22 @@ public class LogserverHandler extends SearchHandler {
         IndexSearcher searcher = LucenePlus.getSearcher(name);
         TopDocs topDocs = searcher.search(query, 100000);// 1000*100
         if (topDocs.scoreDocs != null && topDocs.scoreDocs.length > 0) {
-            List<String> lines = new LinkedList<>();
+            List<Integer[]> pages = new LinkedList<>();
+            int currentPage = 0;
+            Integer[] arr = null;
             for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
                 Document doc = searcher.doc(scoreDoc.doc);
-                lines.add(doc.get("number"));
+                int line = Integer.parseInt(doc.get("number"));
+                int calcPage = (line - 1) / pageSize + 1;
+                if (calcPage > currentPage) {
+                    arr = new Integer[] { calcPage, 1 };
+                    pages.add(arr);
+                    currentPage = calcPage;
+                } else {
+                    arr[1] += 1;
+                }
             }
-            return lines;
+            return pages;
         }
         return Collections.emptyList();
     }
