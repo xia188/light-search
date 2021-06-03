@@ -6,7 +6,7 @@ jarfile=target/$appname.jar
 [ ! -e "$jarfile" ] && jarfile=$appname.jar
 Survivor=2 Old=32 NewSize=$[Survivor*10] Xmx=$[NewSize+Old] #NewSize=Survivor*(1+1+8) Xmx=NewSize+Old
 JVM_OPS="-Xmx${Xmx}m -Xms${Xmx}m -XX:NewSize=${NewSize}m -XX:MaxNewSize=${NewSize}m -XX:SurvivorRatio=8 -Xss228k"
-JVM_OPS="$JVM_OPS -Djava.compiler=none -Dlogserver -DcontextName=$appname"
+JVM_OPS="$JVM_OPS -Djava.compiler=none -Dlogserver -Dlogserver.token=xlongwei -DcontextName=$appname"
 #ENV_OPS="PATH=/usr/java/jdk1.8.0_161/bin:$PATH"
 JVM_OPS="$JVM_OPS -Duser.timezone=GMT+8 -DclientThreads=1"
 #JVM_OPS="$JVM_OPS -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"

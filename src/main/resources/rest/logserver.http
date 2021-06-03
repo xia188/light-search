@@ -9,6 +9,7 @@
     ?name={{name}}
 
 {
+    "realtime":"true",
     "fields":[
         {
             "field": "day",

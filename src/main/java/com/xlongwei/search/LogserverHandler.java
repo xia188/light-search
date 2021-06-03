@@ -1,10 +1,12 @@
 package com.xlongwei.search;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.networknt.utility.StringUtils;
@@ -21,12 +23,18 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.BytesRef;
+import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import io.undertow.server.HttpServerExchange;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class LogserverHandler extends SearchHandler {
 
     private static String name = SearchHandler.name(LogserverHandler.class);
+    private static String tokenKey = "logserver.token", token = System.getProperty(tokenKey, System.getenv(tokenKey));
 
     public void pages(HttpServerExchange exchange) throws Exception {
         String logs = HandlerUtil.getParam(exchange, "logs");
@@ -52,6 +60,40 @@ public class LogserverHandler extends SearchHandler {
         } else {
             HandlerUtil.setResp(exchange, Collections.singletonMap("delete", false));
         }
+    }
+
+    public void log(HttpServerExchange exchange) throws Exception {
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        String loggerName = HandlerUtil.getParam(exchange, "logger");
+        List<ch.qos.logback.classic.Logger> loggers = null;
+        if (StringUtils.isNotBlank(loggerName)) {
+            ch.qos.logback.classic.Logger logger = lc.getLogger(loggerName);
+            if (logger != null) {
+                loggers = Arrays.asList(logger);
+                String levelName = HandlerUtil.getParam(exchange, "level");
+                if (StringUtils.isNotBlank(levelName)) {
+                    if (StringUtils.isBlank(token) || token.equals(HandlerUtil.getParam(exchange, "token"))) {
+                        Level level = Level.toLevel(levelName, null);
+                        log.warn("change logger:{} level from:{} to:{}", logger.getName(), logger.getLevel(), level);
+                        logger.setLevel(level);
+                    }
+                }
+            }
+        }
+        if (loggers == null) {
+            loggers = lc.getLoggerList();
+        }
+        log.info("check logger level, loggers:{}", loggers.size());
+        List<Map<String, String>> list = loggers.stream().sorted((a, b) -> a.getName().compareTo(b.getName()))
+                .map(logger -> {
+                    Map<String, String> map = new HashMap<>();
+                    map.put("logger", logger.getName());
+                    map.put("level", Objects.toString(logger.getLevel(), ""));
+                    return map;
+                }).collect(Collectors.toList());
+        Map<String, Object> map = new HashMap<>();
+        map.put("loggers", list);
+        HandlerUtil.setResp(exchange, map);
     }
 
     public static List<Integer[]> pages(String day, String search, int pageSize) throws Exception {
