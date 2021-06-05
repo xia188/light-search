@@ -54,25 +54,16 @@
 	<root level="${logLevel}">
 		<if condition='isDefined("logserver")'>
 		    <then>
-		    	<if condition='isDefined("redis")'>
-		    		<then>
-						<appender-ref ref="ASYNC_REDIS" />
-		    		</then>
-		    		<else>
-						<appender-ref ref="ASYNC_SOCKET" />
-		    		</else>
-		    	</if>
+				<appender-ref ref="ASYNC_SOCKET" />
 		    </then>
 		    <else>
 				<if condition='isDefined("logfile")'>
 				    <then>
 						<appender-ref ref="ASYNC_FILE" />
 				    </then>
-				    <else>
-						<appender-ref ref="STDOUT" />
-				    </else>
 				</if>
 		    </else>
 		</if>
+		<appender-ref ref="STDOUT" />
 	</root>
 </configuration>

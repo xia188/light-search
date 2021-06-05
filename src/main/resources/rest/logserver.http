@@ -67,6 +67,11 @@ POST {{host}}/service/logserver/lines
     # &logs=all.logs
 
 ###
+POST {{host}}/service/logserver/log
+    ?logger=ROOT
+    # &token=xlongwei&level=INFO
+
+###
 POST {{host}}/service/logserver/delete
     ?day=2021-05-28
 
