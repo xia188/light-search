@@ -78,3 +78,7 @@ POST {{host}}/service/logserver/delete
 ###
 {{index}}/drop
     ?name={{name}}
+
+###
+POST {{host}}/service/logserver/list
+    ?search=bankCardNumber

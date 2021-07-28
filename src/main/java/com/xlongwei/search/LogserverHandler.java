@@ -1,12 +1,15 @@
 package com.xlongwei.search;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.networknt.utility.StringUtils;
@@ -35,6 +38,26 @@ public class LogserverHandler extends SearchHandler {
 
     private static String name = SearchHandler.name(LogserverHandler.class);
     private static String tokenKey = "logserver.token", token = System.getProperty(tokenKey, System.getenv(tokenKey));
+
+    public void list(HttpServerExchange exchange) throws Exception {
+        String search = HandlerUtil.getParam(exchange, "search");
+        List<String> list = Collections.emptyList();
+        Builder builder = new BooleanQuery.Builder();
+        builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
+        BooleanQuery query = builder.build();
+        IndexSearcher searcher = LucenePlus.getSearcher(name);
+        TopDocs topDocs = searcher.search(query, 100000);// 1000*100
+        if (topDocs.scoreDocs != null && topDocs.scoreDocs.length > 0) {
+            Set<String> days = new HashSet<>();
+            for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+                Document doc = searcher.doc(scoreDoc.doc);
+                String day = doc.get("day");
+                days.add(day);
+            }
+            list = new ArrayList<>(days);
+        }
+        HandlerUtil.setResp(exchange, Collections.singletonMap("list", list));
+    }
 
     public void pages(HttpServerExchange exchange) throws Exception {
         String logs = HandlerUtil.getParam(exchange, "logs");
@@ -106,7 +129,6 @@ public class LogserverHandler extends SearchHandler {
         }
         if (StringUtils.isNotBlank(search)) {
             builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
-
         }
         BooleanQuery query = builder.build();
         IndexSearcher searcher = LucenePlus.getSearcher(name);

@@ -2,7 +2,7 @@ package com.xlongwei.search;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +47,7 @@ public class DistrictIndexer {
     public void createIndex() throws Exception {
         Map<String, Object> config = Config.getInstance().getJsonMapConfig("lucene");
         String index = (String) config.get("index"), district = "district";
-        FSDirectory fsDirectory = NIOFSDirectory.open(Path.of(index, district));
+        FSDirectory fsDirectory = NIOFSDirectory.open(Paths.get(index, district));
         IndexWriter indexWriter = new IndexWriter(fsDirectory, new IndexWriterConfig());
         Map<String, String> codeNames = new HashMap<>();
         int[] arr = new int[]{2, 4, 6, 9};
