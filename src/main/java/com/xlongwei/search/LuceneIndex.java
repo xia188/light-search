@@ -18,15 +18,11 @@ import com.networknt.config.Config;
 import com.networknt.utility.StringUtils;
 
 import io.undertow.util.FileUtils;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Slf4j
-@NoArgsConstructor
-@AllArgsConstructor
 public class LuceneIndex {
 
     private String analyzer;

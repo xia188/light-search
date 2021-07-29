@@ -35,6 +35,7 @@ import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSLockFactory;
 import org.apache.lucene.store.LockFactory;
@@ -344,6 +345,10 @@ public class LucenePlus implements ShutdownHookProvider {
                 }
         }
         throw new IllegalArgumentException("termQuery unsupport field type " + field.getName());
+    }
+
+    public static boolean hasDoc(TopDocs topDocs) {
+        return topDocs != null && topDocs.scoreDocs != null && topDocs.scoreDocs.length > 0;
     }
 
     @Override

@@ -22,7 +22,7 @@
 ### logserver索引
 
 1.  配合[logserver](https://gitee.com/xlongwei/logserver)使用，改善搜索效果，但:=-等特殊符号处理不理想
-2.  索引参数：day:text,number:store,line:text
+2.  索引参数：day:string,number:int,line:text
 3.  支持查询：line前缀匹配，day索引清理，number返回行号
 
 #### 索引规则

@@ -1,27 +1,24 @@
 package com.xlongwei.search;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.networknt.utility.StringUtils;
 
-import org.apache.lucene.document.Document;
+import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopDocs;
@@ -41,29 +38,34 @@ public class LogserverHandler extends SearchHandler {
 
     public void list(HttpServerExchange exchange) throws Exception {
         String search = HandlerUtil.getParam(exchange, "search");
-        List<String> list = Collections.emptyList();
-        Builder builder = new BooleanQuery.Builder();
-        builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
-        BooleanQuery query = builder.build();
+        List<String> list = new LinkedList<>();
         IndexSearcher searcher = LucenePlus.getSearcher(name);
-        TopDocs topDocs = searcher.search(query, 100000);// 1000*100
-        if (topDocs.scoreDocs != null && topDocs.scoreDocs.length > 0) {
-            Set<String> days = new HashSet<>();
-            for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-                Document doc = searcher.doc(scoreDoc.doc);
-                String day = doc.get("day");
-                days.add(day);
+        LocalDate day = LocalDate.now();
+        while (true) {
+            TopDocs topDocs = searcher.search(new TermQuery(new Term("day", day.toString())), 1);
+            boolean hasLogs = LucenePlus.hasDoc(topDocs);
+            if (!hasLogs) {
+                break;
             }
-            list = new ArrayList<>(days);
+            Builder builder = new BooleanQuery.Builder();
+            builder.add(new TermQuery(new Term("day", day.toString())), Occur.MUST);
+            builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
+            topDocs = searcher.search(builder.build(), 1);
+            hasLogs = LucenePlus.hasDoc(topDocs);
+            if (hasLogs) {
+                list.add(day.toString());
+            }
+            day = day.minusDays(1);
         }
+        ;
         HandlerUtil.setResp(exchange, Collections.singletonMap("list", list));
     }
 
     public void pages(HttpServerExchange exchange) throws Exception {
         String logs = HandlerUtil.getParam(exchange, "logs");
         String search = HandlerUtil.getParam(exchange, "search");
-        String day = StringUtils.isBlank(logs) ? null
-                : (logs.contains("-") ? logs.substring(logs.lastIndexOf(".") + 1) : LocalDate.now().toString());
+        String day = (StringUtils.isNotBlank(logs) && logs.contains("-") ? logs.substring(logs.lastIndexOf(".") + 1)
+                : LocalDate.now().toString());
         int pageSize = (int) HandlerUtil.parseLong(HandlerUtil.getParam(exchange, "pageSize"), 1000L);
         List<Integer[]> pages = pages(day, search, pageSize);
         HandlerUtil.setResp(exchange, Collections.singletonMap("pages", pages));
@@ -120,33 +122,24 @@ public class LogserverHandler extends SearchHandler {
     }
 
     public static List<Integer[]> pages(String day, String search, int pageSize) throws Exception {
-        if (StringUtils.isBlank(day) && StringUtils.isBlank(search)) {
+        if (StringUtils.isBlank(day) || StringUtils.isBlank(search)) {
             return Collections.emptyList();
         }
-        Builder builder = new BooleanQuery.Builder();
-        if (StringUtils.isNotBlank(day)) {
-            builder.add(new TermQuery(new Term("day", day)), Occur.MUST);
-        }
-        if (StringUtils.isNotBlank(search)) {
-            builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
-        }
-        BooleanQuery query = builder.build();
+        List<Integer[]> list = new LinkedList<>();
         IndexSearcher searcher = LucenePlus.getSearcher(name);
-        TopDocs topDocs = searcher.search(query, 100000);// 1000*100
-        if (topDocs.scoreDocs != null && topDocs.scoreDocs.length > 0) {
-            Map<Integer, Integer> pages = new HashMap<>();
-            for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-                Document doc = searcher.doc(scoreDoc.doc);
-                int line = Integer.parseInt(doc.get("number"));
-                Integer calcPage = (line - 1) / pageSize + 1;
-                Integer pageCount = pages.get(calcPage);
-                pages.put(calcPage, pageCount == null ? 1 : pageCount + 1);
+        int page = 0;
+        while (true) {
+            Builder builder = new BooleanQuery.Builder();
+            builder.add(new TermQuery(new Term("day", day)), Occur.MUST);
+            builder.add(IntPoint.newRangeQuery("number", page * pageSize, (page + 1) * pageSize - 1), Occur.MUST);
+            TopDocs topDocs = searcher.search(builder.build(), 10);
+            boolean hasLogs = LucenePlus.hasDoc(topDocs);
+            if (!hasLogs) {
+                break;
             }
-            return pages.entrySet().stream().map(entry -> new Integer[] { entry.getKey(), entry.getValue() })
-                    .sorted((arr1, arr2) -> {
-                        return arr1[0].compareTo(arr2[0]);
-                    }).collect(Collectors.toList());
+            list.add(new Integer[] { page, topDocs.scoreDocs.length });
+            page = page + 1;
         }
-        return Collections.emptyList();
+        return list;
     }
 }

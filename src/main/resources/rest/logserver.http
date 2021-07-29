@@ -13,11 +13,12 @@
     "fields":[
         {
             "field": "day",
-            "type": "string"
+            "type": "string",
+            "store":"no"
         },
         {
             "field": "number",
-            "type": "store"
+            "type": "int"
         },
         {
             "field": "line",
