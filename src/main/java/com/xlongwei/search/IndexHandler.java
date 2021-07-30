@@ -28,7 +28,7 @@ public class IndexHandler extends SearchHandler {
     @SuppressWarnings({ "rawtypes" })
     public void open(HttpServerExchange exchange) throws Exception {
         String name = HandlerUtil.getParam(exchange, "name");
-        if (StringUtils.isBlank(name)) {
+        if (StringUtils.isBlank(name) || HandlerUtil.badToken(exchange)) {
             return;
         }
         LuceneIndex index = LuceneIndex.index(name);
@@ -128,7 +128,7 @@ public class IndexHandler extends SearchHandler {
 
     public void drop(HttpServerExchange exchange) throws Exception {
         String name = HandlerUtil.getParam(exchange, "name");
-        if (StringUtils.isBlank(name) || !LuceneIndex.exists(name)) {
+        if (StringUtils.isBlank(name) || HandlerUtil.badToken(exchange) || !LuceneIndex.exists(name)) {
             HandlerUtil.setResp(exchange, Collections.singletonMap("drop", false));
         } else {
             boolean drop = LucenePlus.drop(name);

@@ -50,6 +50,7 @@ public class HandlerUtil {
     private static String[] patterns = new String[] { "yyyy-MM-dd HH:mm:ss", "yyyyMMddHHmmss", "yyyy-MM-dd", "yyyyMMdd",
             "yyyy/MM/dd", "yyyy.MM.dd", "yyyy-MM-ddTHH:mm:ss" };
     private static String[] trues = new String[] { "true", "yes", "on", "t", "y", "1" };
+    private static String tokenKey = "logserver.token", token = System.getProperty(tokenKey, System.getenv(tokenKey));
 
     /**
      * 解析body为Map<String, Object> <br>
@@ -293,6 +294,10 @@ public class HandlerUtil {
             log.debug(e.getMessage(), e);
         }
         return StringUtils.EMPTY;
+    }
+
+    public static boolean badToken(HttpServerExchange exchange) {
+        return StringUtils.isNotBlank(token) && !token.equals(HandlerUtil.getParam(exchange, "token"));
     }
 
     /** 扫描包下的类 */

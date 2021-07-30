@@ -34,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 public class LogserverHandler extends SearchHandler {
 
     private static String name = SearchHandler.name(LogserverHandler.class);
-    private static String tokenKey = "logserver.token", token = System.getProperty(tokenKey, System.getenv(tokenKey));
 
     public void list(HttpServerExchange exchange) throws Exception {
         String search = HandlerUtil.getParam(exchange, "search");
@@ -94,12 +93,10 @@ public class LogserverHandler extends SearchHandler {
             if (logger != null) {
                 loggers = Arrays.asList(logger);
                 String levelName = HandlerUtil.getParam(exchange, "level");
-                if (StringUtils.isNotBlank(levelName)) {
-                    if (StringUtils.isBlank(token) || token.equals(HandlerUtil.getParam(exchange, "token"))) {
-                        Level level = Level.toLevel(levelName, null);
-                        log.warn("change logger:{} level from:{} to:{}", logger.getName(), logger.getLevel(), level);
-                        logger.setLevel(level);
-                    }
+                if (StringUtils.isNotBlank(levelName) && !HandlerUtil.badToken(exchange)) {
+                    Level level = Level.toLevel(levelName, null);
+                    log.warn("change logger:{} level from:{} to:{}", logger.getName(), logger.getLevel(), level);
+                    logger.setLevel(level);
                 }
             }
         }
