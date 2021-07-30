@@ -42,17 +42,15 @@ public class LogserverHandler extends SearchHandler {
         IndexSearcher searcher = LucenePlus.getSearcher(name);
         LocalDate day = LocalDate.now();
         while (true) {
-            TopDocs topDocs = searcher.search(new TermQuery(new Term("day", day.toString())), 1);
-            boolean hasLogs = LucenePlus.hasDoc(topDocs);
-            if (!hasLogs) {
-                break;
-            }
             Builder builder = new BooleanQuery.Builder();
             builder.add(new TermQuery(new Term("day", day.toString())), Occur.MUST);
+            TopDocs topDocs = searcher.search(builder.build(), 1);
+            if (!LucenePlus.hasDoc(topDocs)) {
+                break;
+            }
             builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
             topDocs = searcher.search(builder.build(), 1);
-            hasLogs = LucenePlus.hasDoc(topDocs);
-            if (hasLogs) {
+            if (LucenePlus.hasDoc(topDocs)) {
                 list.add(day.toString());
             }
             day = day.minusDays(1);
@@ -132,12 +130,15 @@ public class LogserverHandler extends SearchHandler {
             Builder builder = new BooleanQuery.Builder();
             builder.add(new TermQuery(new Term("day", day)), Occur.MUST);
             builder.add(IntPoint.newRangeQuery("number", page * pageSize, (page + 1) * pageSize - 1), Occur.MUST);
-            TopDocs topDocs = searcher.search(builder.build(), 10);
-            boolean hasLogs = LucenePlus.hasDoc(topDocs);
-            if (!hasLogs) {
+            TopDocs topDocs = searcher.search(builder.build(), 1);
+            if (!LucenePlus.hasDoc(topDocs)) {
                 break;
             }
-            list.add(new Integer[] { page, topDocs.scoreDocs.length });
+            builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
+            topDocs = searcher.search(builder.build(), 10);
+            if (LucenePlus.hasDoc(topDocs)) {
+                list.add(new Integer[] { page + 1, topDocs.scoreDocs.length });
+            }
             page = page + 1;
         }
         return list;
