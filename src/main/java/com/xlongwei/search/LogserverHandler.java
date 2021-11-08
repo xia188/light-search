@@ -123,18 +123,29 @@ public class LogserverHandler extends SearchHandler {
         List<Integer[]> list = new LinkedList<>();
         IndexSearcher searcher = LucenePlus.getSearcher(name);
         int page = 0;
+        Builder builder = new BooleanQuery.Builder();
+        builder.add(new TermQuery(new Term("day", day)), Occur.MUST);
+        builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
+        TopDocs topDocs = searcher.search(builder.build(), 1);
+        boolean moreDoc = LucenePlus.hasDoc(topDocs);
         while (true) {
-            Builder builder = new BooleanQuery.Builder();
+            builder = new BooleanQuery.Builder();
             builder.add(new TermQuery(new Term("day", day)), Occur.MUST);
             builder.add(IntPoint.newRangeQuery("number", page * pageSize, (page + 1) * pageSize - 1), Occur.MUST);
-            TopDocs topDocs = searcher.search(builder.build(), 1);
+            topDocs = searcher.search(builder.build(), 1);
             if (!LucenePlus.hasDoc(topDocs)) {
-                break;
+                if (moreDoc) {
+                    page = page + 1;
+                    continue;
+                } else {
+                    break;
+                }
             }
             builder.add(LucenePlus.termQuery(name, Collections.singletonMap("line", search)), Occur.MUST);
             topDocs = searcher.search(builder.build(), 10);
             if (LucenePlus.hasDoc(topDocs)) {
                 list.add(new Integer[] { page + 1, topDocs.scoreDocs.length });
+                moreDoc = false;
             }
             page = page + 1;
         }
